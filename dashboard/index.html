@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프로젝트 2 | 제조 품질 분석 대시보드 포털</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --accent: #0ea5e9;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --hover-border: #93c5fd;
+            --badge-bg: #eff6ff;
+            --badge-text: #1d4ed8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        header .badge-top {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--badge-text);
+            background: var(--badge-bg);
+            border: 1px solid #bfdbfe;
+            padding: 4px 14px;
+            border-radius: 9999px;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 16px;
+            color: var(--text-muted);
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .dashboard-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--hover-border);
+            box-shadow: 0 12px 20px -5px rgba(30, 58, 138, 0.12);
+        }
+
+        .card-header {
+            margin-bottom: 16px;
+        }
+
+        .session-tag {
+            font-size: 12px;
+            font-weight: 700;
+            color: #2563eb;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 10px;
+        }
+
+        .card-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.55;
+            margin-bottom: 20px;
+        }
+
+        .card-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .tag-pill {
+            font-size: 12px;
+            background: #f1f5f9;
+            color: #475569;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .card-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            background: var(--primary);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            transition: background 0.2s ease;
+        }
+
+        .card-btn:hover {
+            background: var(--primary-light);
+        }
+
+        .card-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke-width: 2.5;
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding-top: 24px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 640px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            header h1 {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <span class="badge-top">INNER CIRCLE PROJECT 2</span>
+            <h1>제조 부품 품질 분석 대시보드</h1>
+            <p>02회차 입고검사 탐색적 데이터 분석(EDA) 및 03회차 공급사 품질 정밀 심층 리뷰 대시보드 포털입니다.</p>
+        </header>
+
+        <div class="dashboard-grid">
+            <!-- 02회차 카드 -->
+            <div class="dashboard-card">
+                <div>
+                    <div class="card-header">
+                        <span class="session-tag">02회차 결과물</span>
+                        <h2 class="card-title">부품 입고검사 품질 대시보드</h2>
+                    </div>
+                    <p class="card-desc">
+                        6,000건의 부품 입고검사 데이터(치수·중량 판정 결과)를 바탕으로 공급사(A·B·C) 및 주차별 합격률, 불량 유형, 작업조별 품질 추이를 동적으로 탐색합니다.
+                    </p>
+                    <div class="card-badges">
+                        <span class="tag-pill">EDA</span>
+                        <span class="tag-pill">동적 필터링</span>
+                        <span class="tag-pill">주간/야간 분석</span>
+                        <span class="tag-pill">불량 유형 요약</span>
+                    </div>
+                </div>
+                <a href="./inspection-eda/inspection_dashboard.html" class="card-btn">
+                    대시보드 열기
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </a>
+            </div>
+
+            <!-- 03회차 카드 -->
+            <div class="dashboard-card">
+                <div>
+                    <div class="card-header">
+                        <span class="session-tag">03회차 결과물</span>
+                        <h2 class="card-title">공급사 품질 심층 리뷰 대시보드</h2>
+                    </div>
+                    <p class="card-desc">
+                        A·B·C 공급사의 품질 안정성을 비교하고, 8주차 치수 이탈 이상 징후 및 라인·작업조 히트맵, 3사 치수 박스플롯/히스토그램 정밀 그래프를 연계한 종합 품질 보고서입니다.
+                    </p>
+                    <div class="card-badges">
+                        <span class="tag-pill">심층 리뷰</span>
+                        <span class="tag-pill">공급사 비교</span>
+                        <span class="tag-pill">히트맵 & 박스플롯</span>
+                        <span class="tag-pill">이상 징후 진단</span>
+                    </div>
+                </div>
+                <a href="./supplier-review/supplier_review.html" class="card-btn">
+                    대시보드 열기
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </a>
+            </div>
+        </div>
+
+        <footer>
+            <p>제조 품질 관리 시스템 대시보드 배포 포털 | Cloudflare Pages</p>
+        </footer>
+    </div>
+</body>
+</html>
+

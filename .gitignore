@@ -1,0 +1,6 @@
+# Local convenience scripts
+*.bat
+*.cmd
+.DS_Store
+Thumbs.db
+
