@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>매장 주문량 예측 검토</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Pretendard', -apple-system, sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Project 2 · 05회차</span>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">선형회귀 모델 검토</span>
+        </div>
+        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">매장 주문량 예측 검토</h1>
+      </div>
+      <div class="flex items-center gap-3 text-xs">
+        <div class="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
+          <span class="font-bold text-emerald-800 block">학습 기간 (Train)</span>
+          <span class="text-emerald-700">2024-11-01 ~ 2026-05-31</span>
+        </div>
+        <div class="bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg">
+          <span class="font-bold text-indigo-800 block">평가 기간 (Test)</span>
+          <span class="text-indigo-700">2026-06-01 ~ 2026-08-31</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- 1. 회귀계수 주요 해석 카드 -->
+    <section>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+          회귀계수 주요 해석 (모델의 예측 규칙)
+        </h2>
+        <span class="text-xs text-slate-500">기준: 강남역매장, 월요일</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        
+        <!-- 계수 카드 1 -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[11px] font-semibold text-slate-500">영업예정시간 효과</div>
+          <div class="text-2xl font-extrabold text-blue-600 mt-1">+21.6건 <span class="text-xs font-normal text-slate-500">/ 1시간</span></div>
+          <p class="text-xs text-slate-600 mt-2 leading-snug">
+            <strong>결론:</strong> 다른 조건이 같을 때 영업시간이 1시간 늘어나면 예측치는 약 21.6건 증가합니다.
+          </p>
+        </div>
+
+        <!-- 계수 카드 2 -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[11px] font-semibold text-slate-500">예정할인율 프로모션</div>
+          <div class="text-2xl font-extrabold text-indigo-600 mt-1">+23.0건 <span class="text-xs font-normal text-slate-500">/ 10%p</span></div>
+          <p class="text-xs text-slate-600 mt-2 leading-snug">
+            <strong>결론:</strong> 할인율 10% 적용 시(1%p당 +2.3건) 약 23건의 주문 유입 효과를 계산합니다.
+          </p>
+        </div>
+
+        <!-- 계수 카드 3 -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[11px] font-semibold text-slate-500">주말(토요일) 효과</div>
+          <div class="text-2xl font-extrabold text-amber-600 mt-1">+53.2건 <span class="text-xs font-normal text-slate-500">vs 월요일</span></div>
+          <p class="text-xs text-slate-600 mt-2 leading-snug">
+            <strong>결론:</strong> 토요일은 주중 대비 가장 강한 유입 계수(+53.2건)가 반영됩니다.
+          </p>
+        </div>
+
+        <!-- 계수 카드 4 -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[11px] font-semibold text-slate-500">매장별 체급 격차</div>
+          <div class="text-2xl font-extrabold text-slate-800 mt-1">최대 166.6건</div>
+          <p class="text-xs text-slate-600 mt-2 leading-snug">
+            <strong>결론:</strong> 판교역(+62.1건)과 수원역(-104.5건) 간 166건 이상의 고유 기본 격차가 존재합니다.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2. 매장별, 요일별 주문 현황 (학습 데이터: 2024-11-01 ~ 2026-05-31) -->
+    <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-3 mb-5 gap-2">
+        <div>
+          <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800">학습 데이터 분석 (2024-11-01 ~ 2026-05-31 · 2,885행)</span>
+          <h2 class="text-lg font-bold text-slate-900 mt-1">매장별 및 요일별 주문 현황</h2>
+        </div>
+        <span class="text-xs text-slate-500">단위: 평균 주문건수(건)</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Table (8 cols) -->
+        <div class="lg:col-span-8 overflow-x-auto">
+          <table class="w-full text-xs text-center border-collapse">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                <th class="p-2.5 text-left">매장명</th>
+                <th class="p-2.5">월</th>
+                <th class="p-2.5">화</th>
+                <th class="p-2.5">수</th>
+                <th class="p-2.5">목</th>
+                <th class="p-2.5">금</th>
+                <th class="p-2.5 text-blue-600">토 (최고)</th>
+                <th class="p-2.5 text-indigo-600">일</th>
+                <th class="p-2.5 bg-slate-200 text-slate-900 font-bold">매장 전체 평균</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr class="hover:bg-slate-50">
+                <td class="p-2.5 text-left font-bold text-slate-900">판교역매장</td>
+                <td class="p-2.5">396.2</td><td class="p-2.5">401.3</td><td class="p-2.5">412.1</td><td class="p-2.5">416.6</td><td class="p-2.5">443.6</td><td class="p-2.5 font-bold text-blue-700 bg-blue-50/50">479.6</td><td class="p-2.5">469.1</td>
+                <td class="p-2.5 font-bold bg-slate-50 text-slate-900">431.4건</td>
+              </tr>
+              <tr class="hover:bg-slate-50">
+                <td class="p-2.5 text-left font-bold text-slate-900">강남역매장</td>
+                <td class="p-2.5">350.7</td><td class="p-2.5">364.4</td><td class="p-2.5">360.5</td><td class="p-2.5">361.7</td><td class="p-2.5">378.1</td><td class="p-2.5 font-bold text-blue-700 bg-blue-50/50">397.1</td><td class="p-2.5">378.2</td>
+                <td class="p-2.5 font-bold bg-slate-50 text-slate-900">370.2건</td>
+              </tr>
+              <tr class="hover:bg-slate-50">
+                <td class="p-2.5 text-left font-bold text-slate-900">잠실역매장</td>
+                <td class="p-2.5">300.4</td><td class="p-2.5">295.3</td><td class="p-2.5">301.3</td><td class="p-2.5">296.3</td><td class="p-2.5">327.6</td><td class="p-2.5 font-bold text-blue-700 bg-blue-50/50">330.5</td><td class="p-2.5">314.6</td>
+                <td class="p-2.5 font-bold bg-slate-50 text-slate-900">309.5건</td>
+              </tr>
+              <tr class="hover:bg-slate-50">
+                <td class="p-2.5 text-left font-bold text-slate-900">양재역매장</td>
+                <td class="p-2.5">230.2</td><td class="p-2.5">236.8</td><td class="p-2.5">236.1</td><td class="p-2.5">245.0</td><td class="p-2.5">255.7</td><td class="p-2.5 font-bold text-blue-700 bg-blue-50/50">282.6</td><td class="p-2.5">279.7</td>
+                <td class="p-2.5 font-bold bg-slate-50 text-slate-900">252.4건</td>
+              </tr>
+              <tr class="hover:bg-slate-50">
+                <td class="p-2.5 text-left font-bold text-slate-900">수원역매장</td>
+                <td class="p-2.5">197.9</td><td class="p-2.5">197.7</td><td class="p-2.5">206.8</td><td class="p-2.5">217.6</td><td class="p-2.5">223.0</td><td class="p-2.5 font-bold text-blue-700 bg-blue-50/50">263.8</td><td class="p-2.5">248.2</td>
+                <td class="p-2.5 font-bold bg-slate-50 text-slate-900">222.3건</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Short Interpretation (4 cols) -->
+        <div class="lg:col-span-4 bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
+          <div>
+            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 text-emerald-700">💡 현황 핵심 요약</h3>
+            <ul class="text-xs text-slate-700 space-y-2 leading-relaxed">
+              <li class="flex items-start gap-1.5">
+                <span class="text-emerald-600 font-bold">•</span>
+                <span><strong>매장 체급 순위:</strong> 판교(431건) > 강남(370건) > 잠실(310건) > 양재(252건) > 수원(222건)</span>
+              </li>
+              <li class="flex items-start gap-1.5">
+                <span class="text-emerald-600 font-bold">•</span>
+                <span><strong>주간 패턴:</strong> 전 매장 공통으로 <strong>월·화 저점, 금·토·일 급증(토요일 정점)</strong>하는 강한 주기성 확인</span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-3 pt-3 border-t border-slate-200 text-[11px] text-slate-500">
+            결론: 매장 기본 체급과 요일 구분이 예측의 핵심 축으로 작용합니다.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. 실제 vs 예측 산점도 & 짧은 해석 (평가 데이터: 2026-06-01 ~ 2026-08-31) -->
+    <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-3 gap-2">
+        <div>
+          <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-100 text-indigo-800">평가 데이터 검증 (2026-06-01 ~ 2026-08-31 · 460행)</span>
+          <h2 class="text-lg font-bold text-slate-900 mt-1">실제 주문건수 vs 예측 주문건수 산점도</h2>
+        </div>
+        <div class="text-xs text-slate-500">
+          기준선(빨간 점선): 실제 = 예측 | 점 위에 마우스를 올리면 상세 정보가 표시됩니다
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        
+        <!-- Interactive Scatter Plot (8 cols) -->
+        <div class="lg:col-span-8 bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <div class="h-96">
+            <canvas id="interactiveScatter"></canvas>
+          </div>
+        </div>
+
+        <!-- Short Interpretation (4 cols) -->
+        <div class="lg:col-span-4 space-y-3">
+          
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h3 class="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-2">💡 산점도 결론 요약</h3>
+            <div class="space-y-2.5 text-xs text-slate-700 leading-relaxed">
+              <div>
+                <strong class="text-rose-600 block">1. 여름철 과소 예측 우세 (기준선 아래 점 밀집)</strong>
+                평가 460건 중 <strong>364건(79%)이 실제보다 적게 예측</strong>됨. 계절(폭염/여름철 음료 특수) 미반영이 주원인.
+              </div>
+              <div>
+                <strong class="text-blue-600 block">2. 매장별 군집 구조</strong>
+                점들이 좌하단(수원 200건대)에서 우상단(판교 500건대)으로 매장별 체급에 따라 뚜렷이 분리됨.
+              </div>
+              <div>
+                <strong class="text-slate-800 block">3. 이상치 발생 요인</strong>
+                광고비 3~5만 원 집중일 및 공휴일에서 가장 큰 예측 차이가 발생함.
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Metrics Card -->
+          <div class="bg-indigo-50/60 border border-indigo-200 p-3.5 rounded-xl text-xs space-y-1">
+            <div class="flex justify-between">
+              <span class="text-slate-600">평가 기간 MAE(평균오차):</span>
+              <span class="font-bold text-slate-900">56.3건</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-600">결정계수 (R²):</span>
+              <span class="font-bold text-indigo-700">0.370</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 4. Top 10 오차 큰 기록들 (평가 데이터) -->
+    <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <div class="border-b border-slate-200 pb-3 mb-4">
+        <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800">오차 분석 (Top 10 Outliers)</span>
+        <h2 class="text-lg font-bold text-slate-900 mt-1">예측오차(실제 − 예측) 절댓값 상위 10건 기록</h2>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-slate-200">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+            <tr>
+              <th class="p-2.5 text-center">순위</th>
+              <th class="p-2.5">날짜</th>
+              <th class="p-2.5">매장</th>
+              <th class="p-2.5 text-center">요일</th>
+              <th class="p-2.5 text-center">영업시간</th>
+              <th class="p-2.5 text-center">할인율</th>
+              <th class="p-2.5 text-right">광고예산</th>
+              <th class="p-2.5 text-center">공휴일</th>
+              <th class="p-2.5 text-right">실제 주문</th>
+              <th class="p-2.5 text-right">예측 주문</th>
+              <th class="p-2.5 text-right font-bold text-rose-600">예측오차 (실제-예측)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 text-center font-bold text-slate-500">1</td>
+              <td class="p-2.5 font-medium">2026-07-29</td>
+              <td class="p-2.5 font-bold text-slate-800">잠실역매장</td>
+              <td class="p-2.5 text-center">수</td>
+              <td class="p-2.5 text-center">11시간</td>
+              <td class="p-2.5 text-center">0%</td>
+              <td class="p-2.5 text-right font-semibold">5만</td>
+              <td class="p-2.5 text-center"><span class="text-slate-400">평일</span></td>
+              <td class="p-2.5 text-right font-bold text-blue-700">535건</td>
+              <td class="p-2.5 text-right text-slate-600">286.9건</td>
+              <td class="p-2.5 text-right font-bold text-rose-600">+248.1건</td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 text-center font-bold text-slate-500">2</td>
+              <td class="p-2.5 font-medium">2026-07-03</td>
+              <td class="p-2.5 font-bold text-slate-800">잠실역매장</td>
+              <td class="p-2.5 text-center">금</td>
+              <td class="p-2.5 text-center">12시간</td>
+              <td class="p-2.5 text-center">0%</td>
+              <td class="p-2.5 text-right font-semibold">3만</td>
+              <td class="p-2.5 text-center"><span class="text-slate-400">평일</span></td>
+              <td class="p-2.5 text-right font-bold text-blue-700">575건</td>
+              <td class="p-2.5 text-right text-slate-600">331.5건</td>
+              <td class="p-2.5 text-right font-bold text-rose-600">+243.5건</td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 text-center font-bold text-slate-500">3</td>
+              <td class="p-2.5 font-medium">2026-08-13</td>
+              <td class="p-2.5 font-bold text-slate-800">잠실역매장</td>
+              <td class="p-2.5 text-center">목</td>
+              <td class="p-2.5 text-center">10시간</td>
+              <td class="p-2.5 text-center">0%</td>
+              <td class="p-2.5 text-right font-semibold">5만</td>
+              <td class="p-2.5 text-center"><span class="text-slate-400">평일</span></td>
+              <td class="p-2.5 text-right font-bold text-blue-700">496건</td>
+              <td class="p-2.5 text-right text-slate-600">270.1건</td>
+              <td class="p-2.5 text-right font-bold text-rose-600">+225.9건</td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 text-center font-bold text-slate-500">4</td>
+              <td class="p-2.5 font-medium">2026-07-02</td>
+              <td class="p-2.5 font-bold text-slate-800">잠실역매장</td>
+              <td class="p-2.5 text-center">목</td>
+              <td class="p-2.5 text-center">11시간</td>
+              <td class="p-2.5 text-center">0%</td>
+              <td class="p-2.5 text-right font-semibold">5만</td>
+              <td class="p-2.5 text-center"><span class="text-slate-400">평일</span></td>
+              <td class="p-2.5 text-right font-bold text-blue-700">513건</td>
+              <td class="p-2.5 text-right text-slate-600">291.8건</td>
+              <td class="p-2.5 text-right font-bold text-rose-600">+221.2건</td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 text-center font-bold text-slate-500">5</td>
+              <td class="p-2.5 font-medium">2026-07-30</td>
+              <td class="p-2.5 font-bold text-slate-800">잠실역매장</td>
+              <td class="p-2.5 text-center">목</td>
+              <td class="p-2.5 text-center">11시간</td>
+              <td class="p-2.5 text-center">0%</td>
+              <td class="p-2.5 text-right font-semibold">2만</td>
+              <td class="p-2.5 text-center"><span class="text-slate-400">평일</span></td>
+              <td class="p-2.5 text-right font-bold text-blue-700">500건</td>
+              <td class="p-2.5 text-right text-slate-600">291.8건</td>
+              <td class="p-2.5 text-right font-bold text-rose-600">+208.2건</td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 text-center font-bold text-slate-500">6</td>
+              <td class="p-2.5 font-medium">2026-08-24</td>
+              <td class="p-2.5 font-bold text-slate-800">판교역매장</td>
+              <td class="p-2.5 text-center">월</td>
+              <td class="p-2.5 text-center">12시간</td>
+              <td class="p-2.5 text-center">0%</td>
+              <td class="p-2.5 text-right font-semibold">5만</td>
+              <td class="p-2.5 text-center"><span class="text-slate-400">평일</span></td>
+              <td class="p-2.5 text-right font-bold text-blue-700">601건</td>
+              <td class="p-2.5 text-right text-slate-600">402.7건</td>
+              <td class="p-2.5 text-right font-bold text-rose-600">+198.3건</td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 text-center font-bold text-slate-500">7</td>
+              <td class="p-2.5 font-medium">2026-07-28</td>
+              <td class="p-2.5 font-bold text-slate-800">잠실역매장</td>
+              <td class="p-2.5 text-center">화</td>
+              <td class="p-2.5 text-center">11시간</td>
+              <td class="p-2.5 text-center">0%</td>
+              <td class="p-2.5 text-right font-semibold">1만</td>
+              <td class="p-2.5 text-center"><span class="text-slate-400">평일</span></td>
+              <td class="p-2.5 text-right font-bold text-blue-700">476건</td>
+              <td class="p-2.5 text-right text-slate-600">284.9건</td>
+              <td class="p-2.5 text-right font-bold text-rose-600">+191.1건</td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 text-center font-bold text-slate-500">8</td>
+              <td class="p-2.5 font-medium">2026-08-23</td>
+              <td class="p-2.5 font-bold text-slate-800">판교역매장</td>
+              <td class="p-2.5 text-center">일</td>
+              <td class="p-2.5 text-center">11시간</td>
+              <td class="p-2.5 text-center">0%</td>
+              <td class="p-2.5 text-right font-semibold">3만</td>
+              <td class="p-2.5 text-center"><span class="text-slate-400">평일</span></td>
+              <td class="p-2.5 text-right font-bold text-blue-700">594건</td>
+              <td class="p-2.5 text-right text-slate-600">422.9건</td>
+              <td class="p-2.5 text-right font-bold text-rose-600">+171.1건</td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 text-center font-bold text-slate-500">9</td>
+              <td class="p-2.5 font-medium">2026-07-19</td>
+              <td class="p-2.5 font-bold text-slate-800">판교역매장</td>
+              <td class="p-2.5 text-center">일</td>
+              <td class="p-2.5 text-center">11시간</td>
+              <td class="p-2.5 text-center">5%</td>
+              <td class="p-2.5 text-right font-semibold">3만</td>
+              <td class="p-2.5 text-center"><span class="text-slate-400">평일</span></td>
+              <td class="p-2.5 text-right font-bold text-blue-700">605건</td>
+              <td class="p-2.5 text-right text-slate-600">434.4건</td>
+              <td class="p-2.5 text-right font-bold text-rose-600">+170.6건</td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 text-center font-bold text-slate-500">10</td>
+              <td class="p-2.5 font-medium">2026-07-19</td>
+              <td class="p-2.5 font-bold text-slate-800">양재역매장</td>
+              <td class="p-2.5 text-center">일</td>
+              <td class="p-2.5 text-center">11시간</td>
+              <td class="p-2.5 text-center">5%</td>
+              <td class="p-2.5 text-right font-semibold">1만</td>
+              <td class="p-2.5 text-center"><span class="text-slate-400">평일</span></td>
+              <td class="p-2.5 text-right font-bold text-blue-700">462건</td>
+              <td class="p-2.5 text-right text-slate-600">298.3건</td>
+              <td class="p-2.5 text-right font-bold text-rose-600">+163.7건</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-3 text-xs text-slate-500 flex items-center justify-between">
+        <span>* 상위 10건 모두 <strong>양수(+부호)</strong>로, 7~8월 잠실·판교에 광고비가 3~5만 원 집중 집행되었을 때 대규모 과소 예측이 발생함.</span>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-xs text-slate-400 border-t border-slate-200 mt-10">
+    카페 브랜드 매장 주문량 예측 검토 대시보드 · 05회차 머신러닝 프로젝트
+  </footer>
+
+  <!-- Chart.js Script -->
+  <script>
+    const scatterRaw = {"판교역매장": [{"x": 425, "y": 402.7, "date": "2026-06-01", "weekday": "월", "error": 22.3, "ad": 50000, "holiday": 0}, {"x": 422, "y": 407.1, "date": "2026-06-02", "weekday": "화", "error": 14.9, "ad": 30000, "holiday": 0}, {"x": 434, "y": 410.5, "date": "2026-06-03", "weekday": "수", "error": 23.5, "ad": 20000, "holiday": 1}, {"x": 446, "y": 426.8, "date": "2026-06-04", "weekday": "목", "error": 19.2, "ad": 30000, "holiday": 0}, {"x": 471, "y": 444.9, "date": "2026-06-05", "weekday": "금", "error": 26.1, "ad": 10000, "holiday": 0}, {"x": 523, "y": 455.9, "date": "2026-06-06", "weekday": "토", "error": 67.1, "ad": 30000, "holiday": 1}, {"x": 573, "y": 444.5, "date": "2026-06-07", "weekday": "일", "error": 128.5, "ad": 0, "holiday": 0}, {"x": 401, "y": 425.7, "date": "2026-06-08", "weekday": "월", "error": -24.7, "ad": 30000, "holiday": 0}, {"x": 421, "y": 428.8, "date": "2026-06-09", "weekday": "화", "error": -7.8, "ad": 50000, "holiday": 0}, {"x": 381, "y": 430.8, "date": "2026-06-10", "weekday": "수", "error": -49.8, "ad": 0, "holiday": 0}, {"x": 432, "y": 426.8, "date": "2026-06-11", "weekday": "목", "error": 5.2, "ad": 10000, "holiday": 0}, {"x": 416, "y": 421.9, "date": "2026-06-12", "weekday": "금", "error": -5.9, "ad": 10000, "holiday": 0}, {"x": 498, "y": 455.9, "date": "2026-06-13", "weekday": "토", "error": 42.1, "ad": 50000, "holiday": 0}, {"x": 537, "y": 489.2, "date": "2026-06-14", "weekday": "일", "error": 47.8, "ad": 0, "holiday": 0}, {"x": 428, "y": 402.7, "date": "2026-06-15", "weekday": "월", "error": 25.3, "ad": 30000, "holiday": 0}, {"x": 434, "y": 407.1, "date": "2026-06-16", "weekday": "화", "error": 26.9, "ad": 20000, "holiday": 0}, {"x": 458, "y": 432.1, "date": "2026-06-17", "weekday": "수", "error": 25.9, "ad": 20000, "holiday": 0}, {"x": 483, "y": 436.9, "date": "2026-06-18", "weekday": "목", "error": 46.1, "ad": 50000, "holiday": 0}, {"x": 450, "y": 466.6, "date": "2026-06-19", "weekday": "금", "error": -16.6, "ad": 0, "holiday": 0}, {"x": 612, "y": 512.0, "date": "2026-06-20", "weekday": "토", "error": 100.0, "ad": 0, "holiday": 0}, {"x": 486, "y": 477.7, "date": "2026-06-21", "weekday": "일", "error": 8.3, "ad": 10000, "holiday": 0}, {"x": 389, "y": 415.6, "date": "2026-06-22", "weekday": "월", "error": -26.6, "ad": 20000, "holiday": 0}, {"x": 391, "y": 430.1, "date": "2026-06-23", "weekday": "화", "error": -39.1, "ad": 10000, "holiday": 0}, {"x": 414, "y": 410.5, "date": "2026-06-24", "weekday": "수", "error": 3.5, "ad": 0, "holiday": 0}, {"x": 392, "y": 392.3, "date": "2026-06-25", "weekday": "목", "error": -0.3, "ad": 0, "holiday": 0}, {"x": 418, "y": 432.1, "date": "2026-06-26", "weekday": "금", "error": -14.1, "ad": 20000, "holiday": 0}, {"x": 453, "y": 434.3, "date": "2026-06-27", "weekday": "토", "error": 18.7, "ad": 10000, "holiday": 0}, {"x": 441, "y": 444.5, "date": "2026-06-28", "weekday": "일", "error": -3.5, "ad": 20000, "holiday": 0}, {"x": 394, "y": 381.1, "date": "2026-06-29", "weekday": "월", "error": 12.9, "ad": 30000, "holiday": 0}, {"x": 417, "y": 397.0, "date": "2026-06-30", "weekday": "화", "error": 20.0, "ad": 30000, "holiday": 0}, {"x": 458, "y": 443.6, "date": "2026-07-01", "weekday": "수", "error": 14.4, "ad": 30000, "holiday": 0}, {"x": 405, "y": 436.9, "date": "2026-07-02", "weekday": "목", "error": -31.9, "ad": 30000, "holiday": 0}, {"x": 423, "y": 432.1, "date": "2026-07-03", "weekday": "금", "error": -9.1, "ad": 10000, "holiday": 0}, {"x": 471, "y": 455.9, "date": "2026-07-04", "weekday": "토", "error": 15.1, "ad": 10000, "holiday": 0}, {"x": 516, "y": 444.5, "date": "2026-07-05", "weekday": "일", "error": 71.5, "ad": 50000, "holiday": 0}, {"x": 469, "y": 425.7, "date": "2026-07-06", "weekday": "월", "error": 43.3, "ad": 30000, "holiday": 0}, {"x": 441, "y": 428.8, "date": "2026-07-07", "weekday": "화", "error": 12.2, "ad": 20000, "holiday": 0}, {"x": 401, "y": 422.0, "date": "2026-07-08", "weekday": "수", "error": -21.0, "ad": 50000, "holiday": 0}, {"x": 483, "y": 448.4, "date": "2026-07-09", "weekday": "목", "error": 34.6, "ad": 50000, "holiday": 0}, {"x": 469, "y": 432.1, "date": "2026-07-10", "weekday": "금", "error": 36.9, "ad": 20000, "holiday": 0}, {"x": 457, "y": 455.9, "date": "2026-07-11", "weekday": "토", "error": 1.1, "ad": 20000, "holiday": 0}, {"x": 524, "y": 444.5, "date": "2026-07-12", "weekday": "일", "error": 79.5, "ad": 30000, "holiday": 0}, {"x": 432, "y": 415.6, "date": "2026-07-13", "weekday": "월", "error": 16.4, "ad": 30000, "holiday": 0}, {"x": 451, "y": 407.1, "date": "2026-07-14", "weekday": "화", "error": 43.9, "ad": 50000, "holiday": 0}, {"x": 527, "y": 453.8, "date": "2026-07-15", "weekday": "수", "error": 73.2, "ad": 50000, "holiday": 0}, {"x": 479, "y": 413.9, "date": "2026-07-16", "weekday": "목", "error": 65.1, "ad": 50000, "holiday": 0}, {"x": 552, "y": 466.6, "date": "2026-07-17", "weekday": "금", "error": 85.4, "ad": 50000, "holiday": 1}, {"x": 463, "y": 457.3, "date": "2026-07-18", "weekday": "토", "error": 5.7, "ad": 10000, "holiday": 0}, {"x": 605, "y": 434.4, "date": "2026-07-19", "weekday": "일", "error": 170.6, "ad": 30000, "holiday": 0}, {"x": 436, "y": 402.7, "date": "2026-07-20", "weekday": "월", "error": 33.3, "ad": 20000, "holiday": 0}, {"x": 454, "y": 407.1, "date": "2026-07-21", "weekday": "화", "error": 46.9, "ad": 0, "holiday": 0}, {"x": 425, "y": 432.1, "date": "2026-07-22", "weekday": "수", "error": -7.1, "ad": 30000, "holiday": 0}, {"x": 381, "y": 413.9, "date": "2026-07-23", "weekday": "목", "error": -32.9, "ad": 10000, "holiday": 0}, {"x": 477, "y": 453.7, "date": "2026-07-24", "weekday": "금", "error": 23.3, "ad": 10000, "holiday": 0}, {"x": 529, "y": 455.9, "date": "2026-07-25", "weekday": "토", "error": 73.1, "ad": 30000, "holiday": 0}, {"x": 613, "y": 489.2, "date": "2026-07-26", "weekday": "일", "error": 123.8, "ad": 20000, "holiday": 0}, {"x": 491, "y": 381.1, "date": "2026-07-27", "weekday": "월", "error": 109.9, "ad": 20000, "holiday": 0}, {"x": 448, "y": 428.8, "date": "2026-07-28", "weekday": "화", "error": 19.2, "ad": 20000, "holiday": 0}, {"x": 483, "y": 410.5, "date": "2026-07-29", "weekday": "수", "error": 72.5, "ad": 50000, "holiday": 0}, {"x": 465, "y": 435.6, "date": "2026-07-30", "weekday": "목", "error": 29.4, "ad": 10000, "holiday": 0}, {"x": 445, "y": 432.1, "date": "2026-07-31", "weekday": "금", "error": 12.9, "ad": 20000, "holiday": 0}, {"x": 525, "y": 455.9, "date": "2026-08-01", "weekday": "토", "error": 69.1, "ad": 30000, "holiday": 0}, {"x": 504, "y": 422.9, "date": "2026-08-02", "weekday": "일", "error": 81.1, "ad": 30000, "holiday": 0}, {"x": 471, "y": 425.7, "date": "2026-08-03", "weekday": "월", "error": 45.3, "ad": 30000, "holiday": 0}, {"x": 433, "y": 407.1, "date": "2026-08-04", "weekday": "화", "error": 25.9, "ad": 10000, "holiday": 0}, {"x": 474, "y": 409.1, "date": "2026-08-05", "weekday": "수", "error": 64.9, "ad": 30000, "holiday": 0}, {"x": 464, "y": 435.6, "date": "2026-08-06", "weekday": "목", "error": 28.4, "ad": 0, "holiday": 0}, {"x": 526, "y": 476.7, "date": "2026-08-07", "weekday": "금", "error": 49.3, "ad": 50000, "holiday": 0}, {"x": 535, "y": 467.4, "date": "2026-08-08", "weekday": "토", "error": 67.6, "ad": 20000, "holiday": 0}, {"x": 504, "y": 444.5, "date": "2026-08-09", "weekday": "일", "error": 59.5, "ad": 30000, "holiday": 0}, {"x": 445, "y": 381.1, "date": "2026-08-10", "weekday": "월", "error": 63.9, "ad": 30000, "holiday": 0}, {"x": 455, "y": 407.1, "date": "2026-08-11", "weekday": "화", "error": 47.9, "ad": 30000, "holiday": 0}, {"x": 495, "y": 410.5, "date": "2026-08-12", "weekday": "수", "error": 84.5, "ad": 50000, "holiday": 0}, {"x": 500, "y": 436.9, "date": "2026-08-13", "weekday": "목", "error": 63.1, "ad": 20000, "holiday": 0}, {"x": 463, "y": 432.1, "date": "2026-08-14", "weekday": "금", "error": 30.9, "ad": 20000, "holiday": 0}, {"x": 546, "y": 455.9, "date": "2026-08-15", "weekday": "토", "error": 90.1, "ad": 0, "holiday": 1}, {"x": 538, "y": 467.5, "date": "2026-08-16", "weekday": "일", "error": 70.5, "ad": 30000, "holiday": 0}, {"x": 483, "y": 435.8, "date": "2026-08-17", "weekday": "월", "error": 47.2, "ad": 0, "holiday": 1}, {"x": 459, "y": 440.2, "date": "2026-08-18", "weekday": "화", "error": 18.8, "ad": 20000, "holiday": 0}, {"x": 426, "y": 420.6, "date": "2026-08-19", "weekday": "수", "error": 5.4, "ad": 0, "holiday": 0}, {"x": 448, "y": 413.9, "date": "2026-08-20", "weekday": "목", "error": 34.1, "ad": 30000, "holiday": 0}, {"x": 503, "y": 432.1, "date": "2026-08-21", "weekday": "금", "error": 70.9, "ad": 10000, "holiday": 0}, {"x": 532, "y": 467.4, "date": "2026-08-22", "weekday": "토", "error": 64.6, "ad": 20000, "holiday": 0}, {"x": 594, "y": 422.9, "date": "2026-08-23", "weekday": "일", "error": 171.1, "ad": 30000, "holiday": 0}, {"x": 601, "y": 402.7, "date": "2026-08-24", "weekday": "월", "error": 198.3, "ad": 50000, "holiday": 0}, {"x": 589, "y": 430.1, "date": "2026-08-25", "weekday": "화", "error": 158.9, "ad": 50000, "holiday": 0}, {"x": 490, "y": 432.1, "date": "2026-08-26", "weekday": "수", "error": 57.9, "ad": 20000, "holiday": 0}, {"x": 547, "y": 470.1, "date": "2026-08-27", "weekday": "목", "error": 76.9, "ad": 0, "holiday": 0}, {"x": 486, "y": 432.1, "date": "2026-08-28", "weekday": "금", "error": 53.9, "ad": 20000, "holiday": 0}, {"x": 523, "y": 455.9, "date": "2026-08-29", "weekday": "토", "error": 67.1, "ad": 50000, "holiday": 0}, {"x": 541, "y": 467.5, "date": "2026-08-30", "weekday": "일", "error": 73.5, "ad": 50000, "holiday": 0}, {"x": 419, "y": 425.7, "date": "2026-08-31", "weekday": "월", "error": -6.7, "ad": 0, "holiday": 0}], "강남역매장": [{"x": 295, "y": 319.0, "date": "2026-06-01", "weekday": "월", "error": -24.0, "ad": 20000, "holiday": 0}, {"x": 314, "y": 366.6, "date": "2026-06-02", "weekday": "화", "error": -52.6, "ad": 0, "holiday": 0}, {"x": 349, "y": 347.0, "date": "2026-06-03", "weekday": "수", "error": 2.0, "ad": 30000, "holiday": 1}, {"x": 368, "y": 408.0, "date": "2026-06-04", "weekday": "목", "error": -40.0, "ad": 20000, "holiday": 0}, {"x": 352, "y": 381.5, "date": "2026-06-05", "weekday": "금", "error": -29.5, "ad": 30000, "holiday": 0}, {"x": 417, "y": 438.4, "date": "2026-06-06", "weekday": "토", "error": -21.4, "ad": 20000, "holiday": 1}, {"x": 342, "y": 404.1, "date": "2026-06-07", "weekday": "일", "error": -62.1, "ad": 30000, "holiday": 0}, {"x": 289, "y": 340.6, "date": "2026-06-08", "weekday": "월", "error": -51.6, "ad": 20000, "holiday": 0}, {"x": 314, "y": 345.0, "date": "2026-06-09", "weekday": "화", "error": -31.0, "ad": 10000, "holiday": 0}, {"x": 345, "y": 368.6, "date": "2026-06-10", "weekday": "수", "error": -23.6, "ad": 0, "holiday": 0}, {"x": 323, "y": 386.3, "date": "2026-06-11", "weekday": "목", "error": -63.3, "ad": 0, "holiday": 0}, {"x": 325, "y": 391.6, "date": "2026-06-12", "weekday": "금", "error": -66.6, "ad": 10000, "holiday": 0}, {"x": 346, "y": 393.8, "date": "2026-06-13", "weekday": "토", "error": -47.8, "ad": 20000, "holiday": 0}, {"x": 306, "y": 382.4, "date": "2026-06-14", "weekday": "일", "error": -76.4, "ad": 0, "holiday": 0}, {"x": 288, "y": 340.6, "date": "2026-06-15", "weekday": "월", "error": -52.6, "ad": 10000, "holiday": 0}, {"x": 318, "y": 345.0, "date": "2026-06-16", "weekday": "화", "error": -27.0, "ad": 30000, "holiday": 0}, {"x": 368, "y": 358.5, "date": "2026-06-17", "weekday": "수", "error": 9.5, "ad": 20000, "holiday": 0}, {"x": 322, "y": 351.8, "date": "2026-06-18", "weekday": "목", "error": -29.8, "ad": 10000, "holiday": 0}, {"x": 433, "y": 404.5, "date": "2026-06-19", "weekday": "금", "error": 28.5, "ad": 50000, "holiday": 0}, {"x": 353, "y": 393.8, "date": "2026-06-20", "weekday": "토", "error": -40.8, "ad": 30000, "holiday": 0}, {"x": 369, "y": 393.9, "date": "2026-06-21", "weekday": "일", "error": -24.9, "ad": 50000, "holiday": 0}, {"x": 359, "y": 363.6, "date": "2026-06-22", "weekday": "월", "error": -4.6, "ad": 10000, "holiday": 0}, {"x": 291, "y": 323.4, "date": "2026-06-23", "weekday": "화", "error": -32.4, "ad": 0, "holiday": 0}, {"x": 413, "y": 381.5, "date": "2026-06-24", "weekday": "수", "error": 31.5, "ad": 30000, "holiday": 0}, {"x": 315, "y": 351.8, "date": "2026-06-25", "weekday": "목", "error": -36.8, "ad": 30000, "holiday": 0}, {"x": 355, "y": 348.3, "date": "2026-06-26", "weekday": "금", "error": 6.7, "ad": 30000, "holiday": 0}, {"x": 341, "y": 372.2, "date": "2026-06-27", "weekday": "토", "error": -31.2, "ad": 20000, "holiday": 0}, {"x": 399, "y": 382.4, "date": "2026-06-28", "weekday": "일", "error": 16.6, "ad": 20000, "holiday": 0}, {"x": 320, "y": 362.2, "date": "2026-06-29", "weekday": "월", "error": -42.2, "ad": 30000, "holiday": 0}, {"x": 335, "y": 345.0, "date": "2026-06-30", "weekday": "화", "error": -10.0, "ad": 30000, "holiday": 0}, {"x": 330, "y": 370.0, "date": "2026-07-01", "weekday": "수", "error": -40.0, "ad": 20000, "holiday": 0}, {"x": 331, "y": 351.8, "date": "2026-07-02", "weekday": "목", "error": -20.8, "ad": 20000, "holiday": 0}, {"x": 404, "y": 414.6, "date": "2026-07-03", "weekday": "금", "error": -10.6, "ad": 0, "holiday": 0}, {"x": 375, "y": 416.8, "date": "2026-07-04", "weekday": "토", "error": -41.8, "ad": 30000, "holiday": 0}, {"x": 338, "y": 382.4, "date": "2026-07-05", "weekday": "일", "error": -44.4, "ad": 20000, "holiday": 0}, {"x": 393, "y": 340.6, "date": "2026-07-06", "weekday": "월", "error": 52.4, "ad": 50000, "holiday": 0}, {"x": 338, "y": 356.5, "date": "2026-07-07", "weekday": "화", "error": -18.5, "ad": 30000, "holiday": 0}, {"x": 318, "y": 347.0, "date": "2026-07-08", "weekday": "수", "error": -29.0, "ad": 30000, "holiday": 0}, {"x": 351, "y": 396.5, "date": "2026-07-09", "weekday": "목", "error": -45.5, "ad": 30000, "holiday": 0}, {"x": 339, "y": 393.0, "date": "2026-07-10", "weekday": "금", "error": -54.0, "ad": 30000, "holiday": 0}, {"x": 325, "y": 393.8, "date": "2026-07-11", "weekday": "토", "error": -68.8, "ad": 20000, "holiday": 0}, {"x": 340, "y": 382.4, "date": "2026-07-12", "weekday": "일", "error": -42.4, "ad": 30000, "holiday": 0}, {"x": 299, "y": 340.6, "date": "2026-07-13", "weekday": "월", "error": -41.6, "ad": 0, "holiday": 0}, {"x": 340, "y": 345.0, "date": "2026-07-14", "weekday": "화", "error": -5.0, "ad": 30000, "holiday": 0}, {"x": 353, "y": 380.1, "date": "2026-07-15", "weekday": "수", "error": -27.1, "ad": 20000, "holiday": 0}, {"x": 344, "y": 373.5, "date": "2026-07-16", "weekday": "목", "error": -29.5, "ad": 20000, "holiday": 0}, {"x": 379, "y": 391.6, "date": "2026-07-17", "weekday": "금", "error": -12.6, "ad": 10000, "holiday": 1}, {"x": 388, "y": 416.8, "date": "2026-07-18", "weekday": "토", "error": -28.8, "ad": 50000, "holiday": 0}, {"x": 348, "y": 393.9, "date": "2026-07-19", "weekday": "일", "error": -45.9, "ad": 20000, "holiday": 0}, {"x": 281, "y": 340.6, "date": "2026-07-20", "weekday": "월", "error": -59.6, "ad": 20000, "holiday": 0}, {"x": 363, "y": 379.5, "date": "2026-07-21", "weekday": "화", "error": -16.5, "ad": 20000, "holiday": 0}, {"x": 289, "y": 325.4, "date": "2026-07-22", "weekday": "수", "error": -36.4, "ad": 20000, "holiday": 0}, {"x": 346, "y": 351.8, "date": "2026-07-23", "weekday": "목", "error": -5.8, "ad": 0, "holiday": 0}, {"x": 491, "y": 370.0, "date": "2026-07-24", "weekday": "금", "error": 121.0, "ad": 50000, "holiday": 0}, {"x": 476, "y": 393.8, "date": "2026-07-25", "weekday": "토", "error": 82.2, "ad": 30000, "holiday": 0}, {"x": 343, "y": 382.4, "date": "2026-07-26", "weekday": "일", "error": -39.4, "ad": 10000, "holiday": 0}, {"x": 330, "y": 340.6, "date": "2026-07-27", "weekday": "월", "error": -10.6, "ad": 50000, "holiday": 0}, {"x": 363, "y": 345.0, "date": "2026-07-28", "weekday": "화", "error": 18.0, "ad": 50000, "holiday": 0}, {"x": 344, "y": 325.4, "date": "2026-07-29", "weekday": "수", "error": 18.6, "ad": 30000, "holiday": 0}, {"x": 346, "y": 330.2, "date": "2026-07-30", "weekday": "목", "error": 15.8, "ad": 10000, "holiday": 0}, {"x": 410, "y": 393.0, "date": "2026-07-31", "weekday": "금", "error": 17.0, "ad": 20000, "holiday": 0}, {"x": 421, "y": 393.8, "date": "2026-08-01", "weekday": "토", "error": 27.2, "ad": 0, "holiday": 0}, {"x": 337, "y": 382.4, "date": "2026-08-02", "weekday": "일", "error": -45.4, "ad": 20000, "holiday": 0}, {"x": 386, "y": 375.1, "date": "2026-08-03", "weekday": "월", "error": 10.9, "ad": 0, "holiday": 0}, {"x": 372, "y": 366.6, "date": "2026-08-04", "weekday": "화", "error": 5.4, "ad": 20000, "holiday": 0}, {"x": 429, "y": 381.5, "date": "2026-08-05", "weekday": "수", "error": 47.5, "ad": 50000, "holiday": 0}, {"x": 394, "y": 351.8, "date": "2026-08-06", "weekday": "목", "error": 42.2, "ad": 30000, "holiday": 0}, {"x": 427, "y": 391.6, "date": "2026-08-07", "weekday": "금", "error": 35.4, "ad": 10000, "holiday": 0}, {"x": 416, "y": 426.9, "date": "2026-08-08", "weekday": "토", "error": -10.9, "ad": 30000, "holiday": 0}, {"x": 504, "y": 405.4, "date": "2026-08-09", "weekday": "일", "error": 98.6, "ad": 50000, "holiday": 0}, {"x": 441, "y": 363.6, "date": "2026-08-10", "weekday": "월", "error": 77.4, "ad": 20000, "holiday": 0}, {"x": 433, "y": 323.4, "date": "2026-08-11", "weekday": "화", "error": 109.6, "ad": 20000, "holiday": 0}, {"x": 346, "y": 325.4, "date": "2026-08-12", "weekday": "수", "error": 20.6, "ad": 50000, "holiday": 0}, {"x": 368, "y": 374.8, "date": "2026-08-13", "weekday": "목", "error": -6.8, "ad": 30000, "holiday": 0}, {"x": 391, "y": 404.5, "date": "2026-08-14", "weekday": "금", "error": -13.5, "ad": 0, "holiday": 0}, {"x": 265, "y": 393.8, "date": "2026-08-15", "weekday": "토", "error": -128.8, "ad": 20000, "holiday": 1}, {"x": 340, "y": 382.4, "date": "2026-08-16", "weekday": "일", "error": -42.4, "ad": 20000, "holiday": 0}, {"x": 350, "y": 340.6, "date": "2026-08-17", "weekday": "월", "error": 9.4, "ad": 20000, "holiday": 1}, {"x": 269, "y": 345.0, "date": "2026-08-18", "weekday": "화", "error": -76.0, "ad": 20000, "holiday": 0}, {"x": 337, "y": 347.0, "date": "2026-08-19", "weekday": "수", "error": -10.0, "ad": 30000, "holiday": 0}, {"x": 405, "y": 408.0, "date": "2026-08-20", "weekday": "목", "error": -3.0, "ad": 10000, "holiday": 0}, {"x": 362, "y": 370.0, "date": "2026-08-21", "weekday": "금", "error": -8.0, "ad": 20000, "holiday": 0}, {"x": 388, "y": 393.8, "date": "2026-08-22", "weekday": "토", "error": -5.8, "ad": 10000, "holiday": 0}, {"x": 477, "y": 404.1, "date": "2026-08-23", "weekday": "일", "error": 72.9, "ad": 10000, "holiday": 0}, {"x": 332, "y": 340.6, "date": "2026-08-24", "weekday": "월", "error": -8.6, "ad": 50000, "holiday": 0}, {"x": 345, "y": 345.0, "date": "2026-08-25", "weekday": "화", "error": 0.0, "ad": 20000, "holiday": 0}, {"x": 320, "y": 347.0, "date": "2026-08-26", "weekday": "수", "error": -27.0, "ad": 20000, "holiday": 0}, {"x": 324, "y": 351.8, "date": "2026-08-27", "weekday": "목", "error": -27.8, "ad": 30000, "holiday": 0}, {"x": 337, "y": 404.5, "date": "2026-08-28", "weekday": "금", "error": -67.5, "ad": 20000, "holiday": 0}, {"x": 355, "y": 415.4, "date": "2026-08-29", "weekday": "토", "error": -60.4, "ad": 10000, "holiday": 0}, {"x": 302, "y": 372.3, "date": "2026-08-30", "weekday": "일", "error": -70.3, "ad": 10000, "holiday": 0}, {"x": 374, "y": 340.6, "date": "2026-08-31", "weekday": "월", "error": 33.4, "ad": 30000, "holiday": 0}], "잠실역매장": [{"x": 333, "y": 280.5, "date": "2026-06-01", "weekday": "월", "error": 52.5, "ad": 0, "holiday": 0}, {"x": 335, "y": 307.9, "date": "2026-06-02", "weekday": "화", "error": 27.1, "ad": 10000, "holiday": 0}, {"x": 369, "y": 299.8, "date": "2026-06-03", "weekday": "수", "error": 69.2, "ad": 0, "holiday": 1}, {"x": 409, "y": 303.3, "date": "2026-06-04", "weekday": "목", "error": 105.7, "ad": 30000, "holiday": 0}, {"x": 360, "y": 309.9, "date": "2026-06-05", "weekday": "금", "error": 50.1, "ad": 0, "holiday": 0}, {"x": 455, "y": 333.7, "date": "2026-06-06", "weekday": "토", "error": 121.3, "ad": 20000, "holiday": 1}, {"x": 389, "y": 322.4, "date": "2026-06-07", "weekday": "일", "error": 66.6, "ad": 50000, "holiday": 0}, {"x": 432, "y": 303.5, "date": "2026-06-08", "weekday": "월", "error": 128.5, "ad": 20000, "holiday": 0}, {"x": 452, "y": 296.4, "date": "2026-06-09", "weekday": "화", "error": 155.6, "ad": 50000, "holiday": 0}, {"x": 425, "y": 309.9, "date": "2026-06-10", "weekday": "수", "error": 115.1, "ad": 30000, "holiday": 0}, {"x": 433, "y": 314.8, "date": "2026-06-11", "weekday": "목", "error": 118.2, "ad": 30000, "holiday": 0}, {"x": 426, "y": 309.9, "date": "2026-06-12", "weekday": "금", "error": 116.1, "ad": 10000, "holiday": 0}, {"x": 501, "y": 378.4, "date": "2026-06-13", "weekday": "토", "error": 122.6, "ad": 0, "holiday": 0}, {"x": 517, "y": 356.8, "date": "2026-06-14", "weekday": "일", "error": 160.2, "ad": 10000, "holiday": 0}, {"x": 437, "y": 280.5, "date": "2026-06-15", "weekday": "월", "error": 156.5, "ad": 20000, "holiday": 0}, {"x": 451, "y": 296.4, "date": "2026-06-16", "weekday": "화", "error": 154.6, "ad": 20000, "holiday": 0}, {"x": 416, "y": 286.9, "date": "2026-06-17", "weekday": "수", "error": 129.1, "ad": 20000, "holiday": 0}, {"x": 456, "y": 313.4, "date": "2026-06-18", "weekday": "목", "error": 142.6, "ad": 20000, "holiday": 0}, {"x": 456, "y": 354.5, "date": "2026-06-19", "weekday": "금", "error": 101.5, "ad": 10000, "holiday": 0}, {"x": 453, "y": 333.7, "date": "2026-06-20", "weekday": "토", "error": 119.3, "ad": 30000, "holiday": 0}, {"x": 470, "y": 345.3, "date": "2026-06-21", "weekday": "일", "error": 124.7, "ad": 50000, "holiday": 0}, {"x": 384, "y": 258.9, "date": "2026-06-22", "weekday": "월", "error": 125.1, "ad": 50000, "holiday": 0}, {"x": 377, "y": 284.9, "date": "2026-06-23", "weekday": "화", "error": 92.1, "ad": 0, "holiday": 0}, {"x": 361, "y": 286.9, "date": "2026-06-24", "weekday": "수", "error": 74.1, "ad": 20000, "holiday": 0}, {"x": 387, "y": 270.1, "date": "2026-06-25", "weekday": "목", "error": 116.9, "ad": 30000, "holiday": 0}, {"x": 471, "y": 331.5, "date": "2026-06-26", "weekday": "금", "error": 139.5, "ad": 20000, "holiday": 0}, {"x": 408, "y": 312.1, "date": "2026-06-27", "weekday": "토", "error": 95.9, "ad": 20000, "holiday": 0}, {"x": 451, "y": 356.8, "date": "2026-06-28", "weekday": "일", "error": 94.2, "ad": 20000, "holiday": 0}, {"x": 397, "y": 302.2, "date": "2026-06-29", "weekday": "월", "error": 94.8, "ad": 20000, "holiday": 0}, {"x": 395, "y": 284.9, "date": "2026-06-30", "weekday": "화", "error": 110.1, "ad": 20000, "holiday": 0}, {"x": 403, "y": 286.9, "date": "2026-07-01", "weekday": "수", "error": 116.1, "ad": 20000, "holiday": 0}, {"x": 513, "y": 291.8, "date": "2026-07-02", "weekday": "목", "error": 221.2, "ad": 50000, "holiday": 0}, {"x": 575, "y": 331.5, "date": "2026-07-03", "weekday": "금", "error": 243.5, "ad": 30000, "holiday": 0}, {"x": 457, "y": 378.4, "date": "2026-07-04", "weekday": "토", "error": 78.6, "ad": 50000, "holiday": 0}, {"x": 377, "y": 312.2, "date": "2026-07-05", "weekday": "일", "error": 64.8, "ad": 0, "holiday": 0}, {"x": 404, "y": 325.2, "date": "2026-07-06", "weekday": "월", "error": 78.8, "ad": 30000, "holiday": 0}, {"x": 360, "y": 307.9, "date": "2026-07-07", "weekday": "화", "error": 52.1, "ad": 10000, "holiday": 0}, {"x": 333, "y": 286.9, "date": "2026-07-08", "weekday": "수", "error": 46.1, "ad": 20000, "holiday": 0}, {"x": 392, "y": 313.4, "date": "2026-07-09", "weekday": "목", "error": 78.6, "ad": 20000, "holiday": 0}, {"x": 423, "y": 344.4, "date": "2026-07-10", "weekday": "금", "error": 78.6, "ad": 10000, "holiday": 0}, {"x": 402, "y": 355.4, "date": "2026-07-11", "weekday": "토", "error": 46.6, "ad": 20000, "holiday": 0}, {"x": 417, "y": 333.9, "date": "2026-07-12", "weekday": "일", "error": 83.1, "ad": 10000, "holiday": 0}, {"x": 326, "y": 258.9, "date": "2026-07-13", "weekday": "월", "error": 67.1, "ad": 20000, "holiday": 0}, {"x": 404, "y": 306.6, "date": "2026-07-14", "weekday": "화", "error": 97.4, "ad": 30000, "holiday": 0}, {"x": 431, "y": 286.9, "date": "2026-07-15", "weekday": "수", "error": 144.1, "ad": 50000, "holiday": 0}, {"x": 347, "y": 270.1, "date": "2026-07-16", "weekday": "목", "error": 76.9, "ad": 20000, "holiday": 0}, {"x": 438, "y": 331.5, "date": "2026-07-17", "weekday": "금", "error": 106.5, "ad": 0, "holiday": 1}, {"x": 407, "y": 345.2, "date": "2026-07-18", "weekday": "토", "error": 61.8, "ad": 20000, "holiday": 0}, {"x": 390, "y": 322.4, "date": "2026-07-19", "weekday": "일", "error": 67.6, "ad": 20000, "holiday": 0}, {"x": 408, "y": 292.0, "date": "2026-07-20", "weekday": "월", "error": 116.0, "ad": 30000, "holiday": 0}, {"x": 411, "y": 319.4, "date": "2026-07-21", "weekday": "화", "error": 91.6, "ad": 10000, "holiday": 0}, {"x": 415, "y": 286.9, "date": "2026-07-22", "weekday": "수", "error": 128.1, "ad": 50000, "holiday": 0}, {"x": 348, "y": 291.8, "date": "2026-07-23", "weekday": "목", "error": 56.2, "ad": 30000, "holiday": 0}, {"x": 373, "y": 309.9, "date": "2026-07-24", "weekday": "금", "error": 63.1, "ad": 10000, "holiday": 0}, {"x": 421, "y": 355.4, "date": "2026-07-25", "weekday": "토", "error": 65.6, "ad": 30000, "holiday": 0}, {"x": 394, "y": 322.4, "date": "2026-07-26", "weekday": "일", "error": 71.6, "ad": 20000, "holiday": 0}, {"x": 389, "y": 292.0, "date": "2026-07-27", "weekday": "월", "error": 97.0, "ad": 30000, "holiday": 0}, {"x": 476, "y": 284.9, "date": "2026-07-28", "weekday": "화", "error": 191.1, "ad": 10000, "holiday": 0}, {"x": 535, "y": 286.9, "date": "2026-07-29", "weekday": "수", "error": 248.1, "ad": 50000, "holiday": 0}, {"x": 500, "y": 291.8, "date": "2026-07-30", "weekday": "목", "error": 208.2, "ad": 20000, "holiday": 0}, {"x": 370, "y": 309.9, "date": "2026-07-31", "weekday": "금", "error": 60.1, "ad": 20000, "holiday": 0}, {"x": 405, "y": 356.7, "date": "2026-08-01", "weekday": "토", "error": 48.3, "ad": 30000, "holiday": 0}, {"x": 382, "y": 322.4, "date": "2026-08-02", "weekday": "일", "error": 59.6, "ad": 20000, "holiday": 0}, {"x": 373, "y": 280.5, "date": "2026-08-03", "weekday": "월", "error": 92.5, "ad": 20000, "holiday": 0}, {"x": 396, "y": 284.9, "date": "2026-08-04", "weekday": "화", "error": 111.1, "ad": 50000, "holiday": 0}, {"x": 373, "y": 286.9, "date": "2026-08-05", "weekday": "수", "error": 86.1, "ad": 20000, "holiday": 0}, {"x": 407, "y": 291.8, "date": "2026-08-06", "weekday": "목", "error": 115.2, "ad": 10000, "holiday": 0}, {"x": 375, "y": 309.9, "date": "2026-08-07", "weekday": "금", "error": 65.1, "ad": 30000, "holiday": 0}, {"x": 335, "y": 333.7, "date": "2026-08-08", "weekday": "토", "error": 1.3, "ad": 20000, "holiday": 0}, {"x": 436, "y": 356.8, "date": "2026-08-09", "weekday": "일", "error": 79.2, "ad": 0, "holiday": 0}, {"x": 357, "y": 302.2, "date": "2026-08-10", "weekday": "월", "error": 54.8, "ad": 10000, "holiday": 0}, {"x": 373, "y": 297.8, "date": "2026-08-11", "weekday": "화", "error": 75.2, "ad": 20000, "holiday": 0}, {"x": 395, "y": 288.3, "date": "2026-08-12", "weekday": "수", "error": 106.7, "ad": 20000, "holiday": 0}, {"x": 496, "y": 270.1, "date": "2026-08-13", "weekday": "목", "error": 225.9, "ad": 50000, "holiday": 0}, {"x": 401, "y": 311.3, "date": "2026-08-14", "weekday": "금", "error": 89.7, "ad": 30000, "holiday": 0}, {"x": 435, "y": 356.7, "date": "2026-08-15", "weekday": "토", "error": 78.3, "ad": 0, "holiday": 1}, {"x": 415, "y": 333.9, "date": "2026-08-16", "weekday": "일", "error": 81.1, "ad": 50000, "holiday": 0}, {"x": 343, "y": 258.9, "date": "2026-08-17", "weekday": "월", "error": 84.1, "ad": 10000, "holiday": 1}, {"x": 426, "y": 307.9, "date": "2026-08-18", "weekday": "화", "error": 118.1, "ad": 50000, "holiday": 0}, {"x": 365, "y": 308.6, "date": "2026-08-19", "weekday": "수", "error": 56.4, "ad": 20000, "holiday": 0}, {"x": 375, "y": 304.6, "date": "2026-08-20", "weekday": "목", "error": 70.4, "ad": 20000, "holiday": 0}, {"x": 439, "y": 344.4, "date": "2026-08-21", "weekday": "금", "error": 94.6, "ad": 50000, "holiday": 0}, {"x": 360, "y": 355.4, "date": "2026-08-22", "weekday": "토", "error": 4.6, "ad": 20000, "holiday": 0}, {"x": 317, "y": 323.7, "date": "2026-08-23", "weekday": "일", "error": -6.7, "ad": 0, "holiday": 0}, {"x": 326, "y": 303.5, "date": "2026-08-24", "weekday": "월", "error": 22.5, "ad": 20000, "holiday": 0}, {"x": 332, "y": 296.4, "date": "2026-08-25", "weekday": "화", "error": 35.6, "ad": 20000, "holiday": 0}, {"x": 313, "y": 265.3, "date": "2026-08-26", "weekday": "수", "error": 47.7, "ad": 0, "holiday": 0}, {"x": 296, "y": 291.8, "date": "2026-08-27", "weekday": "목", "error": 4.2, "ad": 0, "holiday": 0}, {"x": 349, "y": 332.9, "date": "2026-08-28", "weekday": "금", "error": 16.1, "ad": 20000, "holiday": 0}, {"x": 356, "y": 333.7, "date": "2026-08-29", "weekday": "토", "error": 22.3, "ad": 50000, "holiday": 0}, {"x": 318, "y": 300.7, "date": "2026-08-30", "weekday": "일", "error": 17.3, "ad": 10000, "holiday": 0}, {"x": 296, "y": 280.5, "date": "2026-08-31", "weekday": "월", "error": 15.5, "ad": 0, "holiday": 0}], "양재역매장": [{"x": 236, "y": 224.7, "date": "2026-06-01", "weekday": "월", "error": 11.3, "ad": 20000, "holiday": 0}, {"x": 324, "y": 249.3, "date": "2026-06-02", "weekday": "화", "error": 74.7, "ad": 20000, "holiday": 0}, {"x": 352, "y": 264.2, "date": "2026-06-03", "weekday": "수", "error": 87.8, "ad": 10000, "holiday": 1}, {"x": 292, "y": 234.5, "date": "2026-06-04", "weekday": "목", "error": 57.5, "ad": 20000, "holiday": 0}, {"x": 262, "y": 231.0, "date": "2026-06-05", "weekday": "금", "error": 31.0, "ad": 30000, "holiday": 0}, {"x": 337, "y": 276.5, "date": "2026-06-06", "weekday": "토", "error": 60.5, "ad": 20000, "holiday": 1}, {"x": 369, "y": 243.5, "date": "2026-06-07", "weekday": "일", "error": 125.5, "ad": 0, "holiday": 0}, {"x": 346, "y": 223.3, "date": "2026-06-08", "weekday": "월", "error": 122.7, "ad": 0, "holiday": 0}, {"x": 238, "y": 206.1, "date": "2026-06-09", "weekday": "화", "error": 31.9, "ad": 30000, "holiday": 0}, {"x": 281, "y": 252.7, "date": "2026-06-10", "weekday": "수", "error": 28.3, "ad": 20000, "holiday": 0}, {"x": 270, "y": 234.5, "date": "2026-06-11", "weekday": "목", "error": 35.5, "ad": 10000, "holiday": 0}, {"x": 301, "y": 231.0, "date": "2026-06-12", "weekday": "금", "error": 70.0, "ad": 50000, "holiday": 0}, {"x": 363, "y": 299.5, "date": "2026-06-13", "weekday": "토", "error": 63.5, "ad": 30000, "holiday": 0}, {"x": 336, "y": 286.8, "date": "2026-06-14", "weekday": "일", "error": 49.2, "ad": 10000, "holiday": 0}, {"x": 233, "y": 201.7, "date": "2026-06-15", "weekday": "월", "error": 31.3, "ad": 0, "holiday": 0}, {"x": 312, "y": 227.7, "date": "2026-06-16", "weekday": "화", "error": 84.3, "ad": 30000, "holiday": 0}, {"x": 288, "y": 241.2, "date": "2026-06-17", "weekday": "수", "error": 46.8, "ad": 0, "holiday": 0}, {"x": 275, "y": 234.5, "date": "2026-06-18", "weekday": "목", "error": 40.5, "ad": 50000, "holiday": 0}, {"x": 314, "y": 274.3, "date": "2026-06-19", "weekday": "금", "error": 39.7, "ad": 20000, "holiday": 0}, {"x": 289, "y": 276.5, "date": "2026-06-20", "weekday": "토", "error": 12.5, "ad": 10000, "holiday": 0}, {"x": 322, "y": 288.1, "date": "2026-06-21", "weekday": "일", "error": 33.9, "ad": 0, "holiday": 0}, {"x": 259, "y": 223.3, "date": "2026-06-22", "weekday": "월", "error": 35.7, "ad": 50000, "holiday": 0}, {"x": 247, "y": 250.7, "date": "2026-06-23", "weekday": "화", "error": -3.7, "ad": 10000, "holiday": 0}, {"x": 265, "y": 229.7, "date": "2026-06-24", "weekday": "수", "error": 35.3, "ad": 30000, "holiday": 0}, {"x": 305, "y": 267.7, "date": "2026-06-25", "weekday": "목", "error": 37.3, "ad": 20000, "holiday": 0}, {"x": 252, "y": 252.7, "date": "2026-06-26", "weekday": "금", "error": -0.7, "ad": 0, "holiday": 0}, {"x": 395, "y": 311.0, "date": "2026-06-27", "weekday": "토", "error": 84.0, "ad": 50000, "holiday": 0}, {"x": 325, "y": 265.1, "date": "2026-06-28", "weekday": "일", "error": 59.9, "ad": 0, "holiday": 0}, {"x": 211, "y": 223.3, "date": "2026-06-29", "weekday": "월", "error": -12.3, "ad": 20000, "holiday": 0}, {"x": 190, "y": 206.1, "date": "2026-06-30", "weekday": "화", "error": -16.1, "ad": 30000, "holiday": 0}, {"x": 315, "y": 251.4, "date": "2026-07-01", "weekday": "수", "error": 63.6, "ad": 30000, "holiday": 0}, {"x": 286, "y": 246.0, "date": "2026-07-02", "weekday": "목", "error": 40.0, "ad": 20000, "holiday": 0}, {"x": 300, "y": 242.5, "date": "2026-07-03", "weekday": "금", "error": 57.5, "ad": 20000, "holiday": 0}, {"x": 379, "y": 299.5, "date": "2026-07-04", "weekday": "토", "error": 79.5, "ad": 50000, "holiday": 0}, {"x": 344, "y": 288.1, "date": "2026-07-05", "weekday": "일", "error": 55.9, "ad": 10000, "holiday": 0}, {"x": 280, "y": 223.3, "date": "2026-07-06", "weekday": "월", "error": 56.7, "ad": 30000, "holiday": 0}, {"x": 337, "y": 227.7, "date": "2026-07-07", "weekday": "화", "error": 109.3, "ad": 30000, "holiday": 0}, {"x": 363, "y": 264.2, "date": "2026-07-08", "weekday": "수", "error": 98.8, "ad": 30000, "holiday": 0}, {"x": 254, "y": 212.9, "date": "2026-07-09", "weekday": "목", "error": 41.1, "ad": 0, "holiday": 0}, {"x": 327, "y": 252.7, "date": "2026-07-10", "weekday": "금", "error": 74.3, "ad": 30000, "holiday": 0}, {"x": 376, "y": 299.5, "date": "2026-07-11", "weekday": "토", "error": 76.5, "ad": 20000, "holiday": 0}, {"x": 360, "y": 265.1, "date": "2026-07-12", "weekday": "일", "error": 94.9, "ad": 0, "holiday": 0}, {"x": 309, "y": 244.9, "date": "2026-07-13", "weekday": "월", "error": 64.1, "ad": 30000, "holiday": 0}, {"x": 273, "y": 227.7, "date": "2026-07-14", "weekday": "화", "error": 45.3, "ad": 20000, "holiday": 0}, {"x": 292, "y": 241.2, "date": "2026-07-15", "weekday": "수", "error": 50.8, "ad": 10000, "holiday": 0}, {"x": 334, "y": 257.5, "date": "2026-07-16", "weekday": "목", "error": 76.5, "ad": 20000, "holiday": 0}, {"x": 293, "y": 231.0, "date": "2026-07-17", "weekday": "금", "error": 62.0, "ad": 20000, "holiday": 1}, {"x": 338, "y": 254.9, "date": "2026-07-18", "weekday": "토", "error": 83.1, "ad": 50000, "holiday": 0}, {"x": 462, "y": 298.3, "date": "2026-07-19", "weekday": "일", "error": 163.7, "ad": 10000, "holiday": 0}, {"x": 278, "y": 224.7, "date": "2026-07-20", "weekday": "월", "error": 53.3, "ad": 30000, "holiday": 0}, {"x": 331, "y": 262.2, "date": "2026-07-21", "weekday": "화", "error": 68.8, "ad": 30000, "holiday": 0}, {"x": 333, "y": 251.4, "date": "2026-07-22", "weekday": "수", "error": 81.6, "ad": 50000, "holiday": 0}, {"x": 244, "y": 212.9, "date": "2026-07-23", "weekday": "목", "error": 31.1, "ad": 0, "holiday": 0}, {"x": 239, "y": 254.0, "date": "2026-07-24", "weekday": "금", "error": -15.0, "ad": 10000, "holiday": 0}, {"x": 362, "y": 321.2, "date": "2026-07-25", "weekday": "토", "error": 40.8, "ad": 20000, "holiday": 0}, {"x": 327, "y": 265.1, "date": "2026-07-26", "weekday": "일", "error": 61.9, "ad": 50000, "holiday": 0}, {"x": 265, "y": 246.3, "date": "2026-07-27", "weekday": "월", "error": 18.7, "ad": 10000, "holiday": 0}, {"x": 270, "y": 227.7, "date": "2026-07-28", "weekday": "화", "error": 42.3, "ad": 20000, "holiday": 0}, {"x": 253, "y": 229.7, "date": "2026-07-29", "weekday": "수", "error": 23.3, "ad": 10000, "holiday": 0}, {"x": 325, "y": 257.5, "date": "2026-07-30", "weekday": "목", "error": 67.5, "ad": 20000, "holiday": 0}, {"x": 318, "y": 274.3, "date": "2026-07-31", "weekday": "금", "error": 43.7, "ad": 20000, "holiday": 0}, {"x": 350, "y": 276.5, "date": "2026-08-01", "weekday": "토", "error": 73.5, "ad": 30000, "holiday": 0}, {"x": 322, "y": 255.0, "date": "2026-08-02", "weekday": "일", "error": 67.0, "ad": 30000, "holiday": 0}, {"x": 245, "y": 213.2, "date": "2026-08-03", "weekday": "월", "error": 31.8, "ad": 0, "holiday": 0}, {"x": 266, "y": 227.7, "date": "2026-08-04", "weekday": "화", "error": 38.3, "ad": 10000, "holiday": 0}, {"x": 323, "y": 229.7, "date": "2026-08-05", "weekday": "수", "error": 93.3, "ad": 50000, "holiday": 0}, {"x": 341, "y": 235.9, "date": "2026-08-06", "weekday": "목", "error": 105.1, "ad": 50000, "holiday": 0}, {"x": 377, "y": 297.3, "date": "2026-08-07", "weekday": "금", "error": 79.7, "ad": 20000, "holiday": 0}, {"x": 333, "y": 276.5, "date": "2026-08-08", "weekday": "토", "error": 56.5, "ad": 10000, "holiday": 0}, {"x": 359, "y": 265.1, "date": "2026-08-09", "weekday": "일", "error": 93.9, "ad": 50000, "holiday": 0}, {"x": 272, "y": 223.3, "date": "2026-08-10", "weekday": "월", "error": 48.7, "ad": 10000, "holiday": 0}, {"x": 293, "y": 229.1, "date": "2026-08-11", "weekday": "화", "error": 63.9, "ad": 0, "holiday": 0}, {"x": 301, "y": 229.7, "date": "2026-08-12", "weekday": "수", "error": 71.3, "ad": 10000, "holiday": 0}, {"x": 299, "y": 235.9, "date": "2026-08-13", "weekday": "목", "error": 63.1, "ad": 10000, "holiday": 0}, {"x": 343, "y": 252.7, "date": "2026-08-14", "weekday": "금", "error": 90.3, "ad": 10000, "holiday": 0}, {"x": 373, "y": 276.5, "date": "2026-08-15", "weekday": "토", "error": 96.5, "ad": 30000, "holiday": 1}, {"x": 424, "y": 299.6, "date": "2026-08-16", "weekday": "일", "error": 124.4, "ad": 30000, "holiday": 0}, {"x": 359, "y": 257.8, "date": "2026-08-17", "weekday": "월", "error": 101.2, "ad": 20000, "holiday": 1}, {"x": 335, "y": 227.7, "date": "2026-08-18", "weekday": "화", "error": 107.3, "ad": 0, "holiday": 0}, {"x": 296, "y": 208.1, "date": "2026-08-19", "weekday": "수", "error": 87.9, "ad": 20000, "holiday": 0}, {"x": 354, "y": 234.5, "date": "2026-08-20", "weekday": "목", "error": 119.5, "ad": 20000, "holiday": 0}, {"x": 331, "y": 252.7, "date": "2026-08-21", "weekday": "금", "error": 78.3, "ad": 30000, "holiday": 0}, {"x": 364, "y": 298.2, "date": "2026-08-22", "weekday": "토", "error": 65.8, "ad": 0, "holiday": 0}, {"x": 317, "y": 265.1, "date": "2026-08-23", "weekday": "일", "error": 51.9, "ad": 0, "holiday": 0}, {"x": 357, "y": 224.7, "date": "2026-08-24", "weekday": "월", "error": 132.3, "ad": 30000, "holiday": 0}, {"x": 348, "y": 272.3, "date": "2026-08-25", "weekday": "화", "error": 75.7, "ad": 10000, "holiday": 0}, {"x": 271, "y": 219.6, "date": "2026-08-26", "weekday": "수", "error": 51.4, "ad": 50000, "holiday": 0}, {"x": 232, "y": 234.5, "date": "2026-08-27", "weekday": "목", "error": -2.5, "ad": 20000, "holiday": 0}, {"x": 263, "y": 252.7, "date": "2026-08-28", "weekday": "금", "error": 10.3, "ad": 0, "holiday": 0}, {"x": 344, "y": 309.7, "date": "2026-08-29", "weekday": "토", "error": 34.3, "ad": 20000, "holiday": 0}, {"x": 349, "y": 288.1, "date": "2026-08-30", "weekday": "일", "error": 60.9, "ad": 20000, "holiday": 0}, {"x": 263, "y": 224.7, "date": "2026-08-31", "weekday": "월", "error": 38.3, "ad": 10000, "holiday": 0}], "수원역매장": [{"x": 240, "y": 214.5, "date": "2026-06-01", "weekday": "월", "error": 25.5, "ad": 10000, "holiday": 0}, {"x": 236, "y": 208.7, "date": "2026-06-02", "weekday": "화", "error": 27.3, "ad": 30000, "holiday": 0}, {"x": 277, "y": 199.3, "date": "2026-06-03", "weekday": "수", "error": 77.7, "ad": 50000, "holiday": 1}, {"x": 245, "y": 227.1, "date": "2026-06-04", "weekday": "목", "error": 17.9, "ad": 20000, "holiday": 0}, {"x": 282, "y": 233.7, "date": "2026-06-05", "weekday": "금", "error": 48.3, "ad": 10000, "holiday": 0}, {"x": 296, "y": 269.0, "date": "2026-06-06", "weekday": "토", "error": 27.0, "ad": 20000, "holiday": 1}, {"x": 229, "y": 234.7, "date": "2026-06-07", "weekday": "일", "error": -5.7, "ad": 0, "holiday": 0}, {"x": 196, "y": 192.8, "date": "2026-06-08", "weekday": "월", "error": 3.2, "ad": 20000, "holiday": 0}, {"x": 250, "y": 220.2, "date": "2026-06-09", "weekday": "화", "error": 29.8, "ad": 30000, "holiday": 0}, {"x": 233, "y": 189.1, "date": "2026-06-10", "weekday": "수", "error": 43.9, "ad": 50000, "holiday": 0}, {"x": 347, "y": 215.6, "date": "2026-06-11", "weekday": "목", "error": 131.4, "ad": 20000, "holiday": 0}, {"x": 335, "y": 222.2, "date": "2026-06-12", "weekday": "금", "error": 112.8, "ad": 10000, "holiday": 0}, {"x": 383, "y": 267.7, "date": "2026-06-13", "weekday": "토", "error": 115.3, "ad": 10000, "holiday": 0}, {"x": 302, "y": 234.7, "date": "2026-06-14", "weekday": "일", "error": 67.3, "ad": 50000, "holiday": 0}, {"x": 267, "y": 204.3, "date": "2026-06-15", "weekday": "월", "error": 62.7, "ad": 10000, "holiday": 0}, {"x": 285, "y": 253.4, "date": "2026-06-16", "weekday": "화", "error": 31.6, "ad": 20000, "holiday": 0}, {"x": 248, "y": 210.8, "date": "2026-06-17", "weekday": "수", "error": 37.2, "ad": 0, "holiday": 0}, {"x": 273, "y": 215.6, "date": "2026-06-18", "weekday": "목", "error": 57.4, "ad": 0, "holiday": 0}, {"x": 287, "y": 222.2, "date": "2026-06-19", "weekday": "금", "error": 64.8, "ad": 30000, "holiday": 0}, {"x": 287, "y": 246.1, "date": "2026-06-20", "weekday": "토", "error": 40.9, "ad": 0, "holiday": 0}, {"x": 296, "y": 234.7, "date": "2026-06-21", "weekday": "일", "error": 61.3, "ad": 20000, "holiday": 0}, {"x": 219, "y": 192.8, "date": "2026-06-22", "weekday": "월", "error": 26.2, "ad": 20000, "holiday": 0}, {"x": 265, "y": 218.9, "date": "2026-06-23", "weekday": "화", "error": 46.1, "ad": 30000, "holiday": 0}, {"x": 243, "y": 199.3, "date": "2026-06-24", "weekday": "수", "error": 43.7, "ad": 30000, "holiday": 0}, {"x": 243, "y": 215.6, "date": "2026-06-25", "weekday": "목", "error": 27.4, "ad": 20000, "holiday": 0}, {"x": 301, "y": 255.4, "date": "2026-06-26", "weekday": "금", "error": 45.6, "ad": 10000, "holiday": 0}, {"x": 326, "y": 267.7, "date": "2026-06-27", "weekday": "토", "error": 58.3, "ad": 30000, "holiday": 0}, {"x": 245, "y": 213.0, "date": "2026-06-28", "weekday": "일", "error": 32.0, "ad": 10000, "holiday": 0}, {"x": 230, "y": 214.5, "date": "2026-06-29", "weekday": "월", "error": 15.5, "ad": 10000, "holiday": 0}, {"x": 244, "y": 197.2, "date": "2026-06-30", "weekday": "화", "error": 46.8, "ad": 0, "holiday": 0}, {"x": 270, "y": 210.8, "date": "2026-07-01", "weekday": "수", "error": 59.2, "ad": 10000, "holiday": 0}, {"x": 272, "y": 215.6, "date": "2026-07-02", "weekday": "목", "error": 56.4, "ad": 50000, "holiday": 0}, {"x": 333, "y": 245.2, "date": "2026-07-03", "weekday": "금", "error": 87.8, "ad": 50000, "holiday": 0}, {"x": 301, "y": 224.4, "date": "2026-07-04", "weekday": "토", "error": 76.6, "ad": 20000, "holiday": 0}, {"x": 337, "y": 246.2, "date": "2026-07-05", "weekday": "일", "error": 90.8, "ad": 10000, "holiday": 0}, {"x": 275, "y": 192.8, "date": "2026-07-06", "weekday": "월", "error": 82.2, "ad": 50000, "holiday": 0}, {"x": 218, "y": 197.2, "date": "2026-07-07", "weekday": "화", "error": 20.8, "ad": 10000, "holiday": 0}, {"x": 253, "y": 210.8, "date": "2026-07-08", "weekday": "수", "error": 42.2, "ad": 10000, "holiday": 0}, {"x": 255, "y": 225.7, "date": "2026-07-09", "weekday": "목", "error": 29.3, "ad": 20000, "holiday": 0}, {"x": 226, "y": 200.6, "date": "2026-07-10", "weekday": "금", "error": 25.4, "ad": 30000, "holiday": 0}, {"x": 285, "y": 246.1, "date": "2026-07-11", "weekday": "토", "error": 38.9, "ad": 10000, "holiday": 0}, {"x": 294, "y": 257.7, "date": "2026-07-12", "weekday": "일", "error": 36.3, "ad": 30000, "holiday": 0}, {"x": 225, "y": 214.5, "date": "2026-07-13", "weekday": "월", "error": 10.5, "ad": 50000, "holiday": 0}, {"x": 213, "y": 197.2, "date": "2026-07-14", "weekday": "화", "error": 15.8, "ad": 50000, "holiday": 0}, {"x": 249, "y": 232.4, "date": "2026-07-15", "weekday": "수", "error": 16.6, "ad": 20000, "holiday": 0}, {"x": 214, "y": 182.4, "date": "2026-07-16", "weekday": "목", "error": 31.6, "ad": 20000, "holiday": 0}, {"x": 257, "y": 212.1, "date": "2026-07-17", "weekday": "금", "error": 44.9, "ad": 20000, "holiday": 1}, {"x": 241, "y": 224.4, "date": "2026-07-18", "weekday": "토", "error": 16.6, "ad": 50000, "holiday": 0}, {"x": 253, "y": 246.2, "date": "2026-07-19", "weekday": "일", "error": 6.8, "ad": 0, "holiday": 0}, {"x": 221, "y": 192.8, "date": "2026-07-20", "weekday": "월", "error": 28.2, "ad": 0, "holiday": 0}, {"x": 236, "y": 197.2, "date": "2026-07-21", "weekday": "화", "error": 38.8, "ad": 10000, "holiday": 0}, {"x": 238, "y": 210.8, "date": "2026-07-22", "weekday": "수", "error": 27.2, "ad": 0, "holiday": 0}, {"x": 243, "y": 204.1, "date": "2026-07-23", "weekday": "목", "error": 38.9, "ad": 0, "holiday": 0}, {"x": 295, "y": 233.7, "date": "2026-07-24", "weekday": "금", "error": 61.3, "ad": 0, "holiday": 0}, {"x": 345, "y": 246.1, "date": "2026-07-25", "weekday": "토", "error": 98.9, "ad": 30000, "holiday": 0}, {"x": 309, "y": 267.8, "date": "2026-07-26", "weekday": "일", "error": 41.2, "ad": 10000, "holiday": 0}, {"x": 283, "y": 215.8, "date": "2026-07-27", "weekday": "월", "error": 67.2, "ad": 30000, "holiday": 0}, {"x": 264, "y": 187.1, "date": "2026-07-28", "weekday": "화", "error": 76.9, "ad": 20000, "holiday": 0}, {"x": 242, "y": 199.3, "date": "2026-07-29", "weekday": "수", "error": 42.7, "ad": 0, "holiday": 0}, {"x": 279, "y": 204.1, "date": "2026-07-30", "weekday": "목", "error": 74.9, "ad": 10000, "holiday": 0}, {"x": 309, "y": 223.6, "date": "2026-07-31", "weekday": "금", "error": 85.4, "ad": 20000, "holiday": 0}, {"x": 316, "y": 235.9, "date": "2026-08-01", "weekday": "토", "error": 80.1, "ad": 20000, "holiday": 0}, {"x": 323, "y": 257.7, "date": "2026-08-02", "weekday": "일", "error": 65.3, "ad": 20000, "holiday": 0}, {"x": 277, "y": 215.8, "date": "2026-08-03", "weekday": "월", "error": 61.2, "ad": 10000, "holiday": 0}, {"x": 262, "y": 197.2, "date": "2026-08-04", "weekday": "화", "error": 64.8, "ad": 30000, "holiday": 0}, {"x": 307, "y": 243.9, "date": "2026-08-05", "weekday": "수", "error": 63.1, "ad": 30000, "holiday": 0}, {"x": 286, "y": 204.1, "date": "2026-08-06", "weekday": "목", "error": 81.9, "ad": 50000, "holiday": 0}, {"x": 348, "y": 245.2, "date": "2026-08-07", "weekday": "금", "error": 102.8, "ad": 30000, "holiday": 0}, {"x": 238, "y": 224.4, "date": "2026-08-08", "weekday": "토", "error": 13.6, "ad": 30000, "holiday": 0}, {"x": 261, "y": 213.0, "date": "2026-08-09", "weekday": "일", "error": 48.0, "ad": 10000, "holiday": 0}, {"x": 203, "y": 182.7, "date": "2026-08-10", "weekday": "월", "error": 20.3, "ad": 0, "holiday": 0}, {"x": 168, "y": 197.2, "date": "2026-08-11", "weekday": "화", "error": -29.2, "ad": 30000, "holiday": 0}, {"x": 245, "y": 199.3, "date": "2026-08-12", "weekday": "수", "error": 45.7, "ad": 30000, "holiday": 0}, {"x": 203, "y": 182.4, "date": "2026-08-13", "weekday": "목", "error": 20.6, "ad": 50000, "holiday": 0}, {"x": 291, "y": 266.9, "date": "2026-08-14", "weekday": "금", "error": 24.1, "ad": 30000, "holiday": 0}, {"x": 304, "y": 257.6, "date": "2026-08-15", "weekday": "토", "error": 46.4, "ad": 20000, "holiday": 1}, {"x": 238, "y": 234.7, "date": "2026-08-16", "weekday": "일", "error": 3.3, "ad": 50000, "holiday": 0}, {"x": 259, "y": 171.2, "date": "2026-08-17", "weekday": "월", "error": 87.8, "ad": 50000, "holiday": 1}, {"x": 242, "y": 197.2, "date": "2026-08-18", "weekday": "화", "error": 44.8, "ad": 30000, "holiday": 0}, {"x": 200, "y": 199.3, "date": "2026-08-19", "weekday": "수", "error": 0.7, "ad": 0, "holiday": 0}, {"x": 232, "y": 204.1, "date": "2026-08-20", "weekday": "목", "error": 27.9, "ad": 0, "holiday": 0}, {"x": 264, "y": 245.2, "date": "2026-08-21", "weekday": "금", "error": 18.8, "ad": 30000, "holiday": 0}, {"x": 228, "y": 258.9, "date": "2026-08-22", "weekday": "토", "error": -30.9, "ad": 30000, "holiday": 0}, {"x": 290, "y": 290.8, "date": "2026-08-23", "weekday": "일", "error": -0.8, "ad": 20000, "holiday": 0}, {"x": 189, "y": 205.7, "date": "2026-08-24", "weekday": "월", "error": -16.7, "ad": 30000, "holiday": 0}, {"x": 189, "y": 208.7, "date": "2026-08-25", "weekday": "화", "error": -19.7, "ad": 20000, "holiday": 0}, {"x": 208, "y": 199.3, "date": "2026-08-26", "weekday": "수", "error": 8.7, "ad": 20000, "holiday": 0}, {"x": 208, "y": 182.4, "date": "2026-08-27", "weekday": "목", "error": 25.6, "ad": 30000, "holiday": 0}, {"x": 217, "y": 233.7, "date": "2026-08-28", "weekday": "금", "error": -16.7, "ad": 20000, "holiday": 0}, {"x": 274, "y": 246.1, "date": "2026-08-29", "weekday": "토", "error": 27.9, "ad": 20000, "holiday": 0}, {"x": 305, "y": 269.2, "date": "2026-08-30", "weekday": "일", "error": 35.8, "ad": 50000, "holiday": 0}, {"x": 353, "y": 215.8, "date": "2026-08-31", "weekday": "월", "error": 137.2, "ad": 50000, "holiday": 0}]};
+    
+    // Store colors
+    const storeColors = {
+      '판교역매장': '#10b981',
+      '강남역매장': '#3b82f6',
+      '잠실역매장': '#f59e0b',
+      '양재역매장': '#8b5cf6',
+      '수원역매장': '#ec4899'
+    };
+
+    const datasets = Object.keys(scatterRaw).map(store => ({
+      label: store,
+      data: scatterRaw[store],
+      backgroundColor: storeColors[store],
+      borderColor: storeColors[store],
+      pointRadius: 4.5,
+      pointHoverRadius: 7
+    }));
+
+    // Reference line (y = x) from 80 to 700
+    datasets.push({
+      label: '기준선 (실제 = 예측)',
+      data: [{x: 80, y: 80}, {x: 680, y: 680}],
+      type: 'line',
+      borderColor: '#ef4444',
+      borderDash: [6, 6],
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false
+    });
+
+    const ctx = document.getElementById('interactiveScatter').getContext('2d');
+    new Chart(ctx, {
+      type: 'scatter',
+      data: { datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { font: { family: 'Pretendard', size: 11 } } },
+          tooltip: {
+            callbacks: {
+              title: function(items) {
+                const item = items[0];
+                if (item.dataset.type === 'line') return '기준선 (실제 = 예측)';
+                const d = item.raw;
+                return `${d.date} (${d.weekday}) · ${item.dataset.label}`;
+              },
+              label: function(item) {
+                if (item.dataset.type === 'line') return '';
+                const d = item.raw;
+                const errSign = d.error > 0 ? '+' : '';
+                return [
+                  `실제: ${d.x}건 | 예측: ${d.y}건`,
+                  `오차: ${errSign}${d.error}건 (광고: ${d.ad}원, 공휴일: ${d.holiday})`
+                ];
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: '실제 주문건수 (건)', font: { size: 12, weight: 'bold' } },
+            min: 80,
+            max: 700
+          },
+          y: {
+            title: { display: true, text: '예측 주문건수 (건)', font: { size: 12, weight: 'bold' } },
+            min: 80,
+            max: 700
+          }
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>

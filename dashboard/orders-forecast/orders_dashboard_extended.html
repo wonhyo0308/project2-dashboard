@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>매장 주문량 예측 검토 대시보드 (확장판)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap');
+    body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
+    .slide-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">Project 2 · 05회차</span>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">운영 최적화 확장판</span>
+        </div>
+        <h1 class="text-2xl font-bold text-slate-900 mt-1">매장 주문량 예측 검토 및 주간 운영 대시보드</h1>
+      </div>
+      <div class="text-xs text-slate-500 bg-slate-100 p-2.5 rounded-lg border border-slate-200">
+        <div>• <strong>학습 기간:</strong> 2024-11-01 ~ 2026-05-31 (2,885행)</div>
+        <div>• <strong>평가 기간:</strong> 2026-06-01 ~ 2026-08-31 (460행)</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+
+    <!-- [핵심 추가 영역] 주간 상세 검토 슬라이드 카드 -->
+    <section class="bg-white rounded-2xl border-2 border-indigo-500 shadow-xl overflow-hidden">
+      <!-- Section Header Banner -->
+      <div class="bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 px-6 py-5 text-white flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2 text-indigo-200 text-xs font-semibold tracking-wide uppercase">
+            <span>Special Focus Slide</span>
+            <span>•</span>
+            <span class="bg-indigo-800 text-indigo-100 px-2 py-0.5 rounded">고정 검토 영역 (필터 무관)</span>
+          </div>
+          <h2 class="text-xl md:text-2xl font-bold mt-1">📊 [주간 상세 검토] 수원역매장 2026년 6월 1주차 분석 & 인력 배치 최적화</h2>
+        </div>
+        <div class="text-xs bg-white/10 backdrop-blur px-3 py-2 rounded-lg border border-white/20">
+          분석 기간: <strong>2026-06-01 (월) ~ 2026-06-07 (일)</strong>
+        </div>
+      </div>
+
+      <!-- Slide Main Content (2 Columns Layout) -->
+      <div class="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Graph & Key Numbers (7 Cols) -->
+        <div class="lg:col-span-7 space-y-4">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 bg-blue-600 rounded-full"></span>
+                실제 vs 예측 주문건수 추이 (수원역매장)
+              </h3>
+              <span class="text-xs text-slate-500">단위: 건</span>
+            </div>
+            <div class="h-64">
+              <canvas id="suwonWeekChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Weekly Data Table -->
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-2.5">날짜(요일)</th>
+                  <th class="p-2.5 text-center">공휴일</th>
+                  <th class="p-2.5 text-right">광고예산</th>
+                  <th class="p-2.5 text-right">실제</th>
+                  <th class="p-2.5 text-right">예측</th>
+                  <th class="p-2.5 text-right">오차(실제-예측)</th>
+                  <th class="p-2.5 text-center">운영 상태</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr class="hover:bg-slate-50">
+                  <td class="p-2.5 font-medium">06-01 (월)</td>
+                  <td class="p-2.5 text-center text-slate-400">-</td>
+                  <td class="p-2.5 text-right">1만</td>
+                  <td class="p-2.5 text-right font-semibold">240</td>
+                  <td class="p-2.5 text-right text-slate-600">214.5</td>
+                  <td class="p-2.5 text-right text-amber-600 font-medium">+25.5</td>
+                  <td class="p-2.5 text-center"><span class="px-2 py-0.5 text-[10px] rounded bg-slate-100 text-slate-600">정상</span></td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="p-2.5 font-medium">06-02 (화)</td>
+                  <td class="p-2.5 text-center text-slate-400">-</td>
+                  <td class="p-2.5 text-right">3만</td>
+                  <td class="p-2.5 text-right font-semibold">236</td>
+                  <td class="p-2.5 text-right text-slate-600">208.7</td>
+                  <td class="p-2.5 text-right text-amber-600 font-medium">+27.3</td>
+                  <td class="p-2.5 text-center"><span class="px-2 py-0.5 text-[10px] rounded bg-slate-100 text-slate-600">정상</span></td>
+                </tr>
+                <tr class="bg-rose-50/70 border-l-4 border-rose-500 font-medium">
+                  <td class="p-2.5 text-rose-900 font-bold">06-03 (수) ★</td>
+                  <td class="p-2.5 text-center"><span class="px-1.5 py-0.5 rounded bg-rose-200 text-rose-800 text-[10px] font-bold">공휴일</span></td>
+                  <td class="p-2.5 text-right font-bold text-rose-700">5만 (최대)</td>
+                  <td class="p-2.5 text-right font-bold text-rose-700">277</td>
+                  <td class="p-2.5 text-right text-slate-500">199.3</td>
+                  <td class="p-2.5 text-right font-bold text-rose-600 text-sm">+77.7</td>
+                  <td class="p-2.5 text-center"><span class="px-2 py-0.5 text-[10px] rounded bg-rose-200 text-rose-900 font-bold">준비부족 경보</span></td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="p-2.5 font-medium">06-04 (목)</td>
+                  <td class="p-2.5 text-center text-slate-400">-</td>
+                  <td class="p-2.5 text-right">2만</td>
+                  <td class="p-2.5 text-right font-semibold">245</td>
+                  <td class="p-2.5 text-right text-slate-600">227.1</td>
+                  <td class="p-2.5 text-right text-amber-600 font-medium">+17.9</td>
+                  <td class="p-2.5 text-center"><span class="px-2 py-0.5 text-[10px] rounded bg-slate-100 text-slate-600">정상</span></td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="p-2.5 font-medium">06-05 (금)</td>
+                  <td class="p-2.5 text-center text-slate-400">-</td>
+                  <td class="p-2.5 text-right">1만</td>
+                  <td class="p-2.5 text-right font-semibold">282</td>
+                  <td class="p-2.5 text-right text-slate-600">233.7</td>
+                  <td class="p-2.5 text-right text-rose-600 font-bold">+48.3</td>
+                  <td class="p-2.5 text-center"><span class="px-2 py-0.5 text-[10px] rounded bg-amber-100 text-amber-800">연휴전 유입</span></td>
+                </tr>
+                <tr class="bg-amber-50/50">
+                  <td class="p-2.5 font-bold text-amber-900">06-06 (토)</td>
+                  <td class="p-2.5 text-center"><span class="px-1.5 py-0.5 rounded bg-amber-200 text-amber-800 text-[10px] font-bold">현충일</span></td>
+                  <td class="p-2.5 text-right">2만</td>
+                  <td class="p-2.5 text-right font-bold text-blue-700">296 (주간최고)</td>
+                  <td class="p-2.5 text-right text-slate-600">269.0</td>
+                  <td class="p-2.5 text-right text-amber-700 font-bold">+27.0</td>
+                  <td class="p-2.5 text-center"><span class="px-2 py-0.5 text-[10px] rounded bg-blue-100 text-blue-800 font-semibold">주말 피크</span></td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="p-2.5 font-medium">06-07 (일)</td>
+                  <td class="p-2.5 text-center text-slate-400">-</td>
+                  <td class="p-2.5 text-right">0원</td>
+                  <td class="p-2.5 text-right font-semibold">229</td>
+                  <td class="p-2.5 text-right text-slate-600">234.7</td>
+                  <td class="p-2.5 text-right text-emerald-600 font-medium">-5.7</td>
+                  <td class="p-2.5 text-center"><span class="px-2 py-0.5 text-[10px] rounded bg-emerald-100 text-emerald-800">예측 일치</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right Column: Operational Diagnosis & Staffing Action Plan (5 Cols) -->
+        <div class="lg:col-span-5 flex flex-col justify-between space-y-4">
+          
+          <!-- Diagnosis Card -->
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <h4 class="text-sm font-bold text-amber-900 flex items-center gap-1.5 mb-2">
+              <span>⚠️</span> 핵심 원인 진단: 왜 6/3(수)에 78건이나 빗나갔는가?
+            </h4>
+            <p class="text-xs text-amber-800 leading-relaxed">
+              현재 1차 선형회귀 모델은 <strong>공휴일여부</strong>와 <strong>광고예산</strong>을 입력 변수에서 제외했습니다. 그 결과 모델은 6/3을 단순 "비수기 평일 수요일(예측 199건)"로 판단했으나, 실제로는 <strong>전국 공휴일 나들이 수요 + 최대 광고비(5만 원) 집행</strong>이 맞물려 <strong>실제 277건(+39% 폭증)</strong>이 발생했습니다.
+            </p>
+          </div>
+
+          <!-- Efficient Staffing Plan (3-Step Strategy) -->
+          <div class="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-xl p-5 shadow-inner space-y-4">
+            <div class="border-b border-indigo-800 pb-2">
+              <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Action Plan</span>
+              <h4 class="text-base font-bold text-indigo-100">📋 공휴일·광고 집중일 인력 배치 최적화 계획</h4>
+            </div>
+
+            <!-- Strategy 1 -->
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">1</div>
+              <div>
+                <h5 class="text-xs font-bold text-indigo-200">운영 보정 룰(Rule) 적용: 사전 버퍼 +35% 가산</h5>
+                <p class="text-[11px] text-slate-300 mt-0.5 leading-snug">
+                  평일이라도 <strong>공휴일</strong>이거나 <strong>광고예산 ≥ 3만 원</strong> 집행 시, 기본 모델 예측값에 <strong>+35%(약 +60~70건)를 의무 가산</strong>하여 발주 및 인력 계획 수립.
+                </p>
+              </div>
+            </div>
+
+            <!-- Strategy 2 -->
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">2</div>
+              <div>
+                <h5 class="text-xs font-bold text-indigo-200">피크 타임(13~17시) 스플릿 시프트(Split Shift) 투입</h5>
+                <p class="text-[11px] text-slate-300 mt-0.5 leading-snug">
+                  평일 기본 2인 체제 → <strong>오후 피크 4시간(13:00~17:00) 단기 파트타이머 1~2명 추가 배치(총 3~4인)</strong>. 전일 근무보다 인건비 40% 절감하면서 대기 시간 60% 단축.
+                </p>
+              </div>
+            </div>
+
+            <!-- Strategy 3 -->
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">3</div>
+              <div>
+                <h5 class="text-xs font-bold text-indigo-200">전날 마감 시 사전 프렙(Prep) 및 원부자재 선발주</h5>
+                <p class="text-[11px] text-slate-300 mt-0.5 leading-snug">
+                  우유·원두·시럽류는 화요일 마감 시 1.5배 선발주 및 베이스 소분 완료. 당일 제조 리드타임을 줄여 주문 급증 시에도 품절 방지.
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- [기존 영역 1] 전체 모델 개요 및 회귀계수 카드 -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- 영업예정시간 해석 -->
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+          <span>운영 변수 효과</span>
+          <span class="text-blue-600 font-bold">단위: 건/시간</span>
+        </div>
+        <div class="text-2xl font-bold text-slate-900">+21.6건</div>
+        <div class="text-xs font-semibold text-blue-700 mt-1">영업시간 1시간 증가 시</div>
+        <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+          다른 조건이 같을 때 1시간 추가 영업 시 모델의 예측 주문량이 약 21.6건 증가합니다.
+        </p>
+      </div>
+
+      <!-- 예정할인율 해석 -->
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+          <span>프로모션 효과</span>
+          <span class="text-indigo-600 font-bold">단위: 건/10%p</span>
+        </div>
+        <div class="text-2xl font-bold text-slate-900">+23.0건</div>
+        <div class="text-xs font-semibold text-indigo-700 mt-1">할인율 0% → 10% 적용 시</div>
+        <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+          1%p당 +2.3건으로, 10%p 프로모션을 진행할 때 약 23건의 주문 유입 효과를 가정합니다.
+        </p>
+      </div>
+
+      <!-- 토요일 vs 월요일 -->
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+          <span>주말 피크 효과</span>
+          <span class="text-amber-600 font-bold">단위: 건</span>
+        </div>
+        <div class="text-2xl font-bold text-slate-900">+53.2건</div>
+        <div class="text-xs font-semibold text-amber-700 mt-1">토요일 (월요일 대비)</div>
+        <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+          모든 매장에서 토요일은 월요일 대비 53건 이상의 베이스 증가폭을 모델이 계산합니다.
+        </p>
+      </div>
+
+    </section>
+
+    <!-- [기존 영역 2] 인터랙티브 예측 검토 (매장 필터링 영역) -->
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+      
+      <!-- Filter Bar -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+        <div>
+          <span class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Evaluation Period (2026-06 ~ 2026-08)</span>
+          <h3 class="text-lg font-bold text-slate-900 mt-0.5">매장별 실제 vs 예측 주문량 인터랙티브 검토</h3>
+        </div>
+
+        <!-- Store Selector Pills -->
+        <div class="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl" id="storeFilterContainer">
+          <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-blue-600 text-white shadow-sm" data-store="전체">전체 매장 합산</button>
+          <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900" data-store="강남역매장">강남역매장</button>
+          <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900" data-store="양재역매장">양재역매장</button>
+          <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900" data-store="판교역매장">판교역매장</button>
+          <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900" data-store="잠실역매장">잠실역매장</button>
+          <button class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900" data-store="수원역매장">수원역매장</button>
+        </div>
+      </div>
+
+      <!-- Summary Metrics Bar -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="metricsBar">
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <div class="text-[11px] text-slate-500">평균 실제 주문건수</div>
+          <div class="text-lg font-bold text-slate-800" id="avgActual">-- 건</div>
+        </div>
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <div class="text-[11px] text-slate-500">평균 예측 주문건수</div>
+          <div class="text-lg font-bold text-slate-800" id="avgPred">-- 건</div>
+        </div>
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <div class="text-[11px] text-slate-500">평균 절대 오차 (MAE)</div>
+          <div class="text-lg font-bold text-amber-600" id="maeMetric">-- 건</div>
+        </div>
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <div class="text-[11px] text-slate-500">주요 오차 경향</div>
+          <div class="text-lg font-bold text-rose-600" id="biasMetric">과소 예측 우세</div>
+        </div>
+      </div>
+
+      <!-- Interactive Chart -->
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+        <div class="h-80">
+          <canvas id="interactiveChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Top Error Records -->
+      <div>
+        <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+          <span>🔍</span> 선택 매장의 예측 차이가 큰 대표 일자 (상위 5건)
+        </h4>
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+              <tr>
+                <th class="p-2.5">날짜</th>
+                <th class="p-2.5">매장</th>
+                <th class="p-2.5">요일</th>
+                <th class="p-2.5 text-center">영업시간</th>
+                <th class="p-2.5 text-center">할인율</th>
+                <th class="p-2.5 text-right">실제 주문</th>
+                <th class="p-2.5 text-right">예측 주문</th>
+                <th class="p-2.5 text-right">예측오차 (실제-예측)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100" id="topErrorTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- [기존 영역 3] 학습 기간 매장 x 요일 히트맵 표 -->
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+      <div class="border-b border-slate-200 pb-3 mb-4">
+        <span class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Training Period (2024-11 ~ 2026-05)</span>
+        <h3 class="text-base font-bold text-slate-900 mt-0.5">학습 기간 매장 및 요일별 평균 주문건수 현황</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-center border-collapse">
+          <thead>
+            <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+              <th class="p-3 text-left">매장</th>
+              <th class="p-3">월</th>
+              <th class="p-3">화</th>
+              <th class="p-3">수</th>
+              <th class="p-3">목</th>
+              <th class="p-3">금</th>
+              <th class="p-3 font-bold text-blue-600">토</th>
+              <th class="p-3 font-bold text-indigo-600">일</th>
+              <th class="p-3 bg-slate-200 font-bold">매장 전체 평균</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 text-left font-bold text-slate-900">판교역매장</td>
+              <td class="p-3">396.2</td><td class="p-3">401.3</td><td class="p-3">412.1</td><td class="p-3">416.6</td><td class="p-3">443.6</td><td class="p-3 font-bold text-blue-700">479.6</td><td class="p-3">469.1</td>
+              <td class="p-3 bg-slate-100 font-bold">431.4건</td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 text-left font-bold text-slate-900">강남역매장</td>
+              <td class="p-3">350.7</td><td class="p-3">364.4</td><td class="p-3">360.5</td><td class="p-3">361.7</td><td class="p-3">378.1</td><td class="p-3 font-bold text-blue-700">397.1</td><td class="p-3">378.2</td>
+              <td class="p-3 bg-slate-100 font-bold">370.2건</td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 text-left font-bold text-slate-900">잠실역매장</td>
+              <td class="p-3">300.4</td><td class="p-3">295.3</td><td class="p-3">301.3</td><td class="p-3">296.3</td><td class="p-3">327.6</td><td class="p-3 font-bold text-blue-700">330.5</td><td class="p-3">314.6</td>
+              <td class="p-3 bg-slate-100 font-bold">309.5건</td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 text-left font-bold text-slate-900">양재역매장</td>
+              <td class="p-3">230.2</td><td class="p-3">236.8</td><td class="p-3">236.1</td><td class="p-3">245.0</td><td class="p-3">255.7</td><td class="p-3 font-bold text-blue-700">282.6</td><td class="p-3">279.7</td>
+              <td class="p-3 bg-slate-100 font-bold">252.4건</td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 text-left font-bold text-slate-900">수원역매장</td>
+              <td class="p-3">197.9</td><td class="p-3">197.7</td><td class="p-3">206.8</td><td class="p-3">217.6</td><td class="p-3">223.0</td><td class="p-3 font-bold text-blue-700">263.8</td><td class="p-3">248.2</td>
+              <td class="p-3 bg-slate-100 font-bold">222.3건</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Embedded Test Data for Interactivity -->
+  <script>
+    const testRecords = [{"날짜": "2026-06-01", "매장": "강남역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 0, "주문건수": 295, "예측주문건수": 319.0, "오차": -24.0, "절댓값오차": 24.0, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-01", "매장": "양재역매장", "요일": "월", "영업예정시간": 9, "예정할인율": 10, "주문건수": 236, "예측주문건수": 224.7, "오차": 11.3, "절댓값오차": 11.3, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-01", "매장": "판교역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 425, "예측주문건수": 402.7, "오차": 22.3, "절댓값오차": 22.3, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-01", "매장": "잠실역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 0, "주문건수": 333, "예측주문건수": 280.5, "오차": 52.5, "절댓값오차": 52.5, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-01", "매장": "수원역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 0, "주문건수": 240, "예측주문건수": 214.5, "오차": 25.5, "절댓값오차": 25.5, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-02", "매장": "강남역매장", "요일": "화", "영업예정시간": 13, "예정할인율": 0, "주문건수": 314, "예측주문건수": 366.6, "오차": -52.6, "절댓값오차": 52.6, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-02", "매장": "양재역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 0, "주문건수": 324, "예측주문건수": 249.3, "오차": 74.7, "절댓값오차": 74.7, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-02", "매장": "판교역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 422, "예측주문건수": 407.1, "오차": 14.9, "절댓값오차": 14.9, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-02", "매장": "잠실역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 10, "주문건수": 335, "예측주문건수": 307.9, "오차": 27.1, "절댓값오차": 27.1, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-02", "매장": "수원역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 5, "주문건수": 236, "예측주문건수": 208.7, "오차": 27.3, "절댓값오차": 27.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-03", "매장": "강남역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 0, "주문건수": 349, "예측주문건수": 347.0, "오차": 2.0, "절댓값오차": 2.0, "광고예산": 30000, "공휴일여부": 1}, {"날짜": "2026-06-03", "매장": "양재역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 15, "주문건수": 352, "예측주문건수": 264.2, "오차": 87.8, "절댓값오차": 87.8, "광고예산": 10000, "공휴일여부": 1}, {"날짜": "2026-06-03", "매장": "판교역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 10, "주문건수": 434, "예측주문건수": 410.5, "오차": 23.5, "절댓값오차": 23.5, "광고예산": 20000, "공휴일여부": 1}, {"날짜": "2026-06-03", "매장": "잠실역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 15, "주문건수": 369, "예측주문건수": 299.8, "오차": 69.2, "절댓값오차": 69.2, "광고예산": 0, "공휴일여부": 1}, {"날짜": "2026-06-03", "매장": "수원역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 0, "주문건수": 277, "예측주문건수": 199.3, "오차": 77.7, "절댓값오차": 77.7, "광고예산": 50000, "공휴일여부": 1}, {"날짜": "2026-06-04", "매장": "강남역매장", "요일": "목", "영업예정시간": 13, "예정할인율": 15, "주문건수": 368, "예측주문건수": 408.0, "오차": -40.0, "절댓값오차": 40.0, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-04", "매장": "양재역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 0, "주문건수": 292, "예측주문건수": 234.5, "오차": 57.5, "절댓값오차": 57.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-04", "매장": "판교역매장", "요일": "목", "영업예정시간": 11, "예정할인율": 15, "주문건수": 446, "예측주문건수": 426.8, "오차": 19.2, "절댓값오차": 19.2, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-04", "매장": "잠실역매장", "요일": "목", "영업예정시간": 11, "예정할인율": 5, "주문건수": 409, "예측주문건수": 303.3, "오차": 105.7, "절댓값오차": 105.7, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-04", "매장": "수원역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 10, "주문건수": 245, "예측주문건수": 227.1, "오차": 17.9, "절댓값오차": 17.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-05", "매장": "강남역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 5, "주문건수": 352, "예측주문건수": 381.5, "오차": -29.5, "절댓값오차": 29.5, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-05", "매장": "양재역매장", "요일": "금", "영업예정시간": 9, "예정할인율": 0, "주문건수": 262, "예측주문건수": 231.0, "오차": 31.0, "절댓값오차": 31.0, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-05", "매장": "판교역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 15, "주문건수": 471, "예측주문건수": 444.9, "오차": 26.1, "절댓값오차": 26.1, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-05", "매장": "잠실역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 0, "주문건수": 360, "예측주문건수": 309.9, "오차": 50.1, "절댓값오차": 50.1, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-05", "매장": "수원역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 5, "주문건수": 282, "예측주문건수": 233.7, "오차": 48.3, "절댓값오차": 48.3, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-06", "매장": "강남역매장", "요일": "토", "영업예정시간": 13, "예정할인율": 10, "주문건수": 417, "예측주문건수": 438.4, "오차": -21.4, "절댓값오차": 21.4, "광고예산": 20000, "공휴일여부": 1}, {"날짜": "2026-06-06", "매장": "양재역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 0, "주문건수": 337, "예측주문건수": 276.5, "오차": 60.5, "절댓값오차": 60.5, "광고예산": 20000, "공휴일여부": 1}, {"날짜": "2026-06-06", "매장": "판교역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 523, "예측주문건수": 455.9, "오차": 67.1, "절댓값오차": 67.1, "광고예산": 30000, "공휴일여부": 1}, {"날짜": "2026-06-06", "매장": "잠실역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 0, "주문건수": 455, "예측주문건수": 333.7, "오차": 121.3, "절댓값오차": 121.3, "광고예산": 20000, "공휴일여부": 1}, {"날짜": "2026-06-06", "매장": "수원역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 10, "주문건수": 296, "예측주문건수": 269.0, "오차": 27.0, "절댓값오차": 27.0, "광고예산": 20000, "공휴일여부": 1}, {"날짜": "2026-06-07", "매장": "강남역매장", "요일": "일", "영업예정시간": 13, "예정할인율": 0, "주문건수": 342, "예측주문건수": 404.1, "오차": -62.1, "절댓값오차": 62.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-07", "매장": "양재역매장", "요일": "일", "영업예정시간": 9, "예정할인율": 0, "주문건수": 369, "예측주문건수": 243.5, "오차": 125.5, "절댓값오차": 125.5, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-07", "매장": "판교역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 0, "주문건수": 573, "예측주문건수": 444.5, "오차": 128.5, "절댓값오차": 128.5, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-07", "매장": "잠실역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 0, "주문건수": 389, "예측주문건수": 322.4, "오차": 66.6, "절댓값오차": 66.6, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-07", "매장": "수원역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 0, "주문건수": 229, "예측주문건수": 234.7, "오차": -5.7, "절댓값오차": 5.7, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-08", "매장": "강남역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 289, "예측주문건수": 340.6, "오차": -51.6, "절댓값오차": 51.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-08", "매장": "양재역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 0, "주문건수": 346, "예측주문건수": 223.3, "오차": 122.7, "절댓값오차": 122.7, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-08", "매장": "판교역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 10, "주문건수": 401, "예측주문건수": 425.7, "오차": -24.7, "절댓값오차": 24.7, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-08", "매장": "잠실역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 10, "주문건수": 432, "예측주문건수": 303.5, "오차": 128.5, "절댓값오차": 128.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-08", "매장": "수원역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 0, "주문건수": 196, "예측주문건수": 192.8, "오차": 3.2, "절댓값오차": 3.2, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-09", "매장": "강남역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 314, "예측주문건수": 345.0, "오차": -31.0, "절댓값오차": 31.0, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-09", "매장": "양재역매장", "요일": "화", "영업예정시간": 9, "예정할인율": 0, "주문건수": 238, "예측주문건수": 206.1, "오차": 31.9, "절댓값오차": 31.9, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-09", "매장": "판교역매장", "요일": "화", "영업예정시간": 13, "예정할인율": 0, "주문건수": 421, "예측주문건수": 428.8, "오차": -7.8, "절댓값오차": 7.8, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-09", "매장": "잠실역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 5, "주문건수": 452, "예측주문건수": 296.4, "오차": 155.6, "절댓값오차": 155.6, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-09", "매장": "수원역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 10, "주문건수": 250, "예측주문건수": 220.2, "오차": 29.8, "절댓값오차": 29.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-10", "매장": "강남역매장", "요일": "수", "영업예정시간": 13, "예정할인율": 0, "주문건수": 345, "예측주문건수": 368.6, "오차": -23.6, "절댓값오차": 23.6, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-10", "매장": "양재역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 10, "주문건수": 281, "예측주문건수": 252.7, "오차": 28.3, "절댓값오차": 28.3, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-10", "매장": "판교역매장", "요일": "수", "영업예정시간": 13, "예정할인율": 0, "주문건수": 381, "예측주문건수": 430.8, "오차": -49.8, "절댓값오차": 49.8, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-10", "매장": "잠실역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 10, "주문건수": 425, "예측주문건수": 309.9, "오차": 115.1, "절댓값오차": 115.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-10", "매장": "수원역매장", "요일": "수", "영업예정시간": 9, "예정할인율": 5, "주문건수": 233, "예측주문건수": 189.1, "오차": 43.9, "절댓값오차": 43.9, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-11", "매장": "강남역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 15, "주문건수": 323, "예측주문건수": 386.3, "오차": -63.3, "절댓값오차": 63.3, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-11", "매장": "양재역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 0, "주문건수": 270, "예측주문건수": 234.5, "오차": 35.5, "절댓값오차": 35.5, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-11", "매장": "판교역매장", "요일": "목", "영업예정시간": 11, "예정할인율": 15, "주문건수": 432, "예측주문건수": 426.8, "오차": 5.2, "절댓값오차": 5.2, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-11", "매장": "잠실역매장", "요일": "목", "영업예정시간": 11, "예정할인율": 10, "주문건수": 433, "예측주문건수": 314.8, "오차": 118.2, "절댓값오차": 118.2, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-11", "매장": "수원역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 5, "주문건수": 347, "예측주문건수": 215.6, "오차": 131.4, "절댓값오차": 131.4, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-12", "매장": "강남역매장", "요일": "금", "영업예정시간": 13, "예정할인율": 0, "주문건수": 325, "예측주문건수": 391.6, "오차": -66.6, "절댓값오차": 66.6, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-12", "매장": "양재역매장", "요일": "금", "영업예정시간": 9, "예정할인율": 0, "주문건수": 301, "예측주문건수": 231.0, "오차": 70.0, "절댓값오차": 70.0, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-12", "매장": "판교역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 5, "주문건수": 416, "예측주문건수": 421.9, "오차": -5.9, "절댓값오차": 5.9, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-12", "매장": "잠실역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 0, "주문건수": 426, "예측주문건수": 309.9, "오차": 116.1, "절댓값오차": 116.1, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-12", "매장": "수원역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 0, "주문건수": 335, "예측주문건수": 222.2, "오차": 112.8, "절댓값오차": 112.8, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-13", "매장": "강남역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 346, "예측주문건수": 393.8, "오차": -47.8, "절댓값오차": 47.8, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-13", "매장": "양재역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 10, "주문건수": 363, "예측주문건수": 299.5, "오차": 63.5, "절댓값오차": 63.5, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-13", "매장": "판교역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 498, "예측주문건수": 455.9, "오차": 42.1, "절댓값오차": 42.1, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-13", "매장": "잠실역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 10, "주문건수": 501, "예측주문건수": 378.4, "오차": 122.6, "절댓값오차": 122.6, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-13", "매장": "수원역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 0, "주문건수": 383, "예측주문건수": 267.7, "오차": 115.3, "절댓값오차": 115.3, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-14", "매장": "강남역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 0, "주문건수": 306, "예측주문건수": 382.4, "오차": -76.4, "절댓값오차": 76.4, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-14", "매장": "양재역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 0, "주문건수": 336, "예측주문건수": 286.8, "오차": 49.2, "절댓값오차": 49.2, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-14", "매장": "판교역매장", "요일": "일", "영업예정시간": 13, "예정할인율": 10, "주문건수": 537, "예측주문건수": 489.2, "오차": 47.8, "절댓값오차": 47.8, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-14", "매장": "잠실역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 15, "주문건수": 517, "예측주문건수": 356.8, "오차": 160.2, "절댓값오차": 160.2, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-14", "매장": "수원역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 0, "주문건수": 302, "예측주문건수": 234.7, "오차": 67.3, "절댓값오차": 67.3, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-15", "매장": "강남역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 288, "예측주문건수": 340.6, "오차": -52.6, "절댓값오차": 52.6, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-15", "매장": "양재역매장", "요일": "월", "영업예정시간": 9, "예정할인율": 0, "주문건수": 233, "예측주문건수": 201.7, "오차": 31.3, "절댓값오차": 31.3, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-15", "매장": "판교역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 428, "예측주문건수": 402.7, "오차": 25.3, "절댓값오차": 25.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-15", "매장": "잠실역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 0, "주문건수": 437, "예측주문건수": 280.5, "오차": 156.5, "절댓값오차": 156.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-15", "매장": "수원역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 5, "주문건수": 267, "예측주문건수": 204.3, "오차": 62.7, "절댓값오차": 62.7, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-16", "매장": "강남역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 318, "예측주문건수": 345.0, "오차": -27.0, "절댓값오차": 27.0, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-16", "매장": "양재역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 0, "주문건수": 312, "예측주문건수": 227.7, "오차": 84.3, "절댓값오차": 84.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-16", "매장": "판교역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 434, "예측주문건수": 407.1, "오차": 26.9, "절댓값오차": 26.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-16", "매장": "잠실역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 5, "주문건수": 451, "예측주문건수": 296.4, "오차": 154.6, "절댓값오차": 154.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-16", "매장": "수원역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 15, "주문건수": 285, "예측주문건수": 253.4, "오차": 31.6, "절댓값오차": 31.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-17", "매장": "강남역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 5, "주문건수": 368, "예측주문건수": 358.5, "오차": 9.5, "절댓값오차": 9.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-17", "매장": "양재역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 5, "주문건수": 288, "예측주문건수": 241.2, "오차": 46.8, "절댓값오차": 46.8, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-17", "매장": "판교역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 10, "주문건수": 458, "예측주문건수": 432.1, "오차": 25.9, "절댓값오차": 25.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-17", "매장": "잠실역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 0, "주문건수": 416, "예측주문건수": 286.9, "오차": 129.1, "절댓값오차": 129.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-17", "매장": "수원역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 5, "주문건수": 248, "예측주문건수": 210.8, "오차": 37.2, "절댓값오차": 37.2, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-18", "매장": "강남역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 0, "주문건수": 322, "예측주문건수": 351.8, "오차": -29.8, "절댓값오차": 29.8, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-18", "매장": "양재역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 0, "주문건수": 275, "예측주문건수": 234.5, "오차": 40.5, "절댓값오차": 40.5, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-18", "매장": "판교역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 10, "주문건수": 483, "예측주문건수": 436.9, "오차": 46.1, "절댓값오차": 46.1, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-18", "매장": "잠실역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 0, "주문건수": 456, "예측주문건수": 313.4, "오차": 142.6, "절댓값오차": 142.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-18", "매장": "수원역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 5, "주문건수": 273, "예측주문건수": 215.6, "오차": 57.4, "절댓값오차": 57.4, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-19", "매장": "강남역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 15, "주문건수": 433, "예측주문건수": 404.5, "오차": 28.5, "절댓값오차": 28.5, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-19", "매장": "양재역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 0, "주문건수": 314, "예측주문건수": 274.3, "오차": 39.7, "절댓값오차": 39.7, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-19", "매장": "판교역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 15, "주문건수": 450, "예측주문건수": 466.6, "오차": -16.6, "절댓값오차": 16.6, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-19", "매장": "잠실역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 10, "주문건수": 456, "예측주문건수": 354.5, "오차": 101.5, "절댓값오차": 101.5, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-19", "매장": "수원역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 0, "주문건수": 287, "예측주문건수": 222.2, "오차": 64.8, "절댓값오차": 64.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-20", "매장": "강남역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 353, "예측주문건수": 393.8, "오차": -40.8, "절댓값오차": 40.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-20", "매장": "양재역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 0, "주문건수": 289, "예측주문건수": 276.5, "오차": 12.5, "절댓값오차": 12.5, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-20", "매장": "판교역매장", "요일": "토", "영업예정시간": 13, "예정할인율": 15, "주문건수": 612, "예측주문건수": 512.0, "오차": 100.0, "절댓값오차": 100.0, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-20", "매장": "잠실역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 0, "주문건수": 453, "예측주문건수": 333.7, "오차": 119.3, "절댓값오차": 119.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-20", "매장": "수원역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 0, "주문건수": 287, "예측주문건수": 246.1, "오차": 40.9, "절댓값오차": 40.9, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-21", "매장": "강남역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 5, "주문건수": 369, "예측주문건수": 393.9, "오차": -24.9, "절댓값오차": 24.9, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-21", "매장": "양재역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 10, "주문건수": 322, "예측주문건수": 288.1, "오차": 33.9, "절댓값오차": 33.9, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-21", "매장": "판교역매장", "요일": "일", "영업예정시간": 13, "예정할인율": 5, "주문건수": 486, "예측주문건수": 477.7, "오차": 8.3, "절댓값오차": 8.3, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-21", "매장": "잠실역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 10, "주문건수": 470, "예측주문건수": 345.3, "오차": 124.7, "절댓값오차": 124.7, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-21", "매장": "수원역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 0, "주문건수": 296, "예측주문건수": 234.7, "오차": 61.3, "절댓값오차": 61.3, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-22", "매장": "강남역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 10, "주문건수": 359, "예측주문건수": 363.6, "오차": -4.6, "절댓값오차": 4.6, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-22", "매장": "양재역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 0, "주문건수": 259, "예측주문건수": 223.3, "오차": 35.7, "절댓값오차": 35.7, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-22", "매장": "판교역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 15, "주문건수": 389, "예측주문건수": 415.6, "오차": -26.6, "절댓값오차": 26.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-22", "매장": "잠실역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 0, "주문건수": 384, "예측주문건수": 258.9, "오차": 125.1, "절댓값오차": 125.1, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-22", "매장": "수원역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 0, "주문건수": 219, "예측주문건수": 192.8, "오차": 26.2, "절댓값오차": 26.2, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-23", "매장": "강남역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 0, "주문건수": 291, "예측주문건수": 323.4, "오차": -32.4, "절댓값오차": 32.4, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-23", "매장": "양재역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 10, "주문건수": 247, "예측주문건수": 250.7, "오차": -3.7, "절댓값오차": 3.7, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-23", "매장": "판교역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 10, "주문건수": 391, "예측주문건수": 430.1, "오차": -39.1, "절댓값오차": 39.1, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-23", "매장": "잠실역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 0, "주문건수": 377, "예측주문건수": 284.9, "오차": 92.1, "절댓값오차": 92.1, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-23", "매장": "수원역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 0, "주문건수": 265, "예측주문건수": 218.9, "오차": 46.1, "절댓값오차": 46.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-24", "매장": "강남역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 15, "주문건수": 413, "예측주문건수": 381.5, "오차": 31.5, "절댓값오차": 31.5, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-24", "매장": "양재역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 0, "주문건수": 265, "예측주문건수": 229.7, "오차": 35.3, "절댓값오차": 35.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-24", "매장": "판교역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 10, "주문건수": 414, "예측주문건수": 410.5, "오차": 3.5, "절댓값오차": 3.5, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-24", "매장": "잠실역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 0, "주문건수": 361, "예측주문건수": 286.9, "오차": 74.1, "절댓값오차": 74.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-24", "매장": "수원역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 0, "주문건수": 243, "예측주문건수": 199.3, "오차": 43.7, "절댓값오차": 43.7, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-25", "매장": "강남역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 0, "주문건수": 315, "예측주문건수": 351.8, "오차": -36.8, "절댓값오차": 36.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-25", "매장": "양재역매장", "요일": "목", "영업예정시간": 11, "예정할인율": 5, "주문건수": 305, "예측주문건수": 267.7, "오차": 37.3, "절댓값오차": 37.3, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-25", "매장": "판교역매장", "요일": "목", "영업예정시간": 11, "예정할인율": 0, "주문건수": 392, "예측주문건수": 392.3, "오차": -0.3, "절댓값오차": 0.3, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-25", "매장": "잠실역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 0, "주문건수": 387, "예측주문건수": 270.1, "오차": 116.9, "절댓값오차": 116.9, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-25", "매장": "수원역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 5, "주문건수": 243, "예측주문건수": 215.6, "오차": 27.4, "절댓값오차": 27.4, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-26", "매장": "강남역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 0, "주문건수": 355, "예측주문건수": 348.3, "오차": 6.7, "절댓값오차": 6.7, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-26", "매장": "양재역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 0, "주문건수": 252, "예측주문건수": 252.7, "오차": -0.7, "절댓값오차": 0.7, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-26", "매장": "판교역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 0, "주문건수": 418, "예측주문건수": 432.1, "오차": -14.1, "절댓값오차": 14.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-26", "매장": "잠실역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 0, "주문건수": 471, "예측주문건수": 331.5, "오차": 139.5, "절댓값오차": 139.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-26", "매장": "수원역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 5, "주문건수": 301, "예측주문건수": 255.4, "오차": 45.6, "절댓값오차": 45.6, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-27", "매장": "강남역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 0, "주문건수": 341, "예측주문건수": 372.2, "오차": -31.2, "절댓값오차": 31.2, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-27", "매장": "양재역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 15, "주문건수": 395, "예측주문건수": 311.0, "오차": 84.0, "절댓값오차": 84.0, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-06-27", "매장": "판교역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 0, "주문건수": 453, "예측주문건수": 434.3, "오차": 18.7, "절댓값오차": 18.7, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-27", "매장": "잠실역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 0, "주문건수": 408, "예측주문건수": 312.1, "오차": 95.9, "절댓값오차": 95.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-27", "매장": "수원역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 0, "주문건수": 326, "예측주문건수": 267.7, "오차": 58.3, "절댓값오차": 58.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-28", "매장": "강남역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 0, "주문건수": 399, "예측주문건수": 382.4, "오차": 16.6, "절댓값오차": 16.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-28", "매장": "양재역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 0, "주문건수": 325, "예측주문건수": 265.1, "오차": 59.9, "절댓값오차": 59.9, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-06-28", "매장": "판교역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 0, "주문건수": 441, "예측주문건수": 444.5, "오차": -3.5, "절댓값오차": 3.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-28", "매장": "잠실역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 15, "주문건수": 451, "예측주문건수": 356.8, "오차": 94.2, "절댓값오차": 94.2, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-28", "매장": "수원역매장", "요일": "일", "영업예정시간": 9, "예정할인율": 0, "주문건수": 245, "예측주문건수": 213.0, "오차": 32.0, "절댓값오차": 32.0, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-29", "매장": "강남역매장", "요일": "월", "영업예정시간": 13, "예정할인율": 0, "주문건수": 320, "예측주문건수": 362.2, "오차": -42.2, "절댓값오차": 42.2, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-29", "매장": "양재역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 0, "주문건수": 211, "예측주문건수": 223.3, "오차": -12.3, "절댓값오차": 12.3, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-29", "매장": "판교역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 0, "주문건수": 394, "예측주문건수": 381.1, "오차": 12.9, "절댓값오차": 12.9, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-29", "매장": "잠실역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 397, "예측주문건수": 302.2, "오차": 94.8, "절댓값오차": 94.8, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-29", "매장": "수원역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 0, "주문건수": 230, "예측주문건수": 214.5, "오차": 15.5, "절댓값오차": 15.5, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-30", "매장": "강남역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 335, "예측주문건수": 345.0, "오차": -10.0, "절댓값오차": 10.0, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-30", "매장": "양재역매장", "요일": "화", "영업예정시간": 9, "예정할인율": 0, "주문건수": 190, "예측주문건수": 206.1, "오차": -16.1, "절댓값오차": 16.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-30", "매장": "판교역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 5, "주문건수": 417, "예측주문건수": 397.0, "오차": 20.0, "절댓값오차": 20.0, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-30", "매장": "잠실역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 0, "주문건수": 395, "예측주문건수": 284.9, "오차": 110.1, "절댓값오차": 110.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-30", "매장": "수원역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 0, "주문건수": 244, "예측주문건수": 197.2, "오차": 46.8, "절댓값오차": 46.8, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-01", "매장": "강남역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 10, "주문건수": 330, "예측주문건수": 370.0, "오차": -40.0, "절댓값오차": 40.0, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-01", "매장": "양재역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 0, "주문건수": 315, "예측주문건수": 251.4, "오차": 63.6, "절댓값오차": 63.6, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-01", "매장": "판교역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 15, "주문건수": 458, "예측주문건수": 443.6, "오차": 14.4, "절댓값오차": 14.4, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-01", "매장": "잠실역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 0, "주문건수": 403, "예측주문건수": 286.9, "오차": 116.1, "절댓값오차": 116.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-01", "매장": "수원역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 5, "주문건수": 270, "예측주문건수": 210.8, "오차": 59.2, "절댓값오차": 59.2, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-02", "매장": "강남역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 0, "주문건수": 331, "예측주문건수": 351.8, "오차": -20.8, "절댓값오차": 20.8, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-02", "매장": "양재역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 5, "주문건수": 286, "예측주문건수": 246.0, "오차": 40.0, "절댓값오차": 40.0, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-02", "매장": "판교역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 10, "주문건수": 405, "예측주문건수": 436.9, "오차": -31.9, "절댓값오차": 31.9, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-02", "매장": "잠실역매장", "요일": "목", "영업예정시간": 11, "예정할인율": 0, "주문건수": 513, "예측주문건수": 291.8, "오차": 221.2, "절댓값오차": 221.2, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-02", "매장": "수원역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 5, "주문건수": 272, "예측주문건수": 215.6, "오차": 56.4, "절댓값오차": 56.4, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-03", "매장": "강남역매장", "요일": "금", "영업예정시간": 13, "예정할인율": 10, "주문건수": 404, "예측주문건수": 414.6, "오차": -10.6, "절댓값오차": 10.6, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-03", "매장": "양재역매장", "요일": "금", "영업예정시간": 9, "예정할인율": 5, "주문건수": 300, "예측주문건수": 242.5, "오차": 57.5, "절댓값오차": 57.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-03", "매장": "판교역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 0, "주문건수": 423, "예측주문건수": 432.1, "오차": -9.1, "절댓값오차": 9.1, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-03", "매장": "잠실역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 0, "주문건수": 575, "예측주문건수": 331.5, "오차": 243.5, "절댓값오차": 243.5, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-03", "매장": "수원역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 10, "주문건수": 333, "예측주문건수": 245.2, "오차": 87.8, "절댓값오차": 87.8, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-04", "매장": "강남역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 10, "주문건수": 375, "예측주문건수": 416.8, "오차": -41.8, "절댓값오차": 41.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-04", "매장": "양재역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 10, "주문건수": 379, "예측주문건수": 299.5, "오차": 79.5, "절댓값오차": 79.5, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-04", "매장": "판교역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 471, "예측주문건수": 455.9, "오차": 15.1, "절댓값오차": 15.1, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-04", "매장": "잠실역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 10, "주문건수": 457, "예측주문건수": 378.4, "오차": 78.6, "절댓값오차": 78.6, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-04", "매장": "수원역매장", "요일": "토", "영업예정시간": 9, "예정할인율": 0, "주문건수": 301, "예측주문건수": 224.4, "오차": 76.6, "절댓값오차": 76.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-05", "매장": "강남역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 0, "주문건수": 338, "예측주문건수": 382.4, "오차": -44.4, "절댓값오차": 44.4, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-05", "매장": "양재역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 10, "주문건수": 344, "예측주문건수": 288.1, "오차": 55.9, "절댓값오차": 55.9, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-05", "매장": "판교역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 0, "주문건수": 516, "예측주문건수": 444.5, "오차": 71.5, "절댓값오차": 71.5, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-05", "매장": "잠실역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 5, "주문건수": 377, "예측주문건수": 312.2, "오차": 64.8, "절댓값오차": 64.8, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-05", "매장": "수원역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 5, "주문건수": 337, "예측주문건수": 246.2, "오차": 90.8, "절댓값오차": 90.8, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-06", "매장": "강남역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 393, "예측주문건수": 340.6, "오차": 52.4, "절댓값오차": 52.4, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-06", "매장": "양재역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 0, "주문건수": 280, "예측주문건수": 223.3, "오차": 56.7, "절댓값오차": 56.7, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-06", "매장": "판교역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 10, "주문건수": 469, "예측주문건수": 425.7, "오차": 43.3, "절댓값오차": 43.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-06", "매장": "잠실역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 10, "주문건수": 404, "예측주문건수": 325.2, "오차": 78.8, "절댓값오차": 78.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-06", "매장": "수원역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 0, "주문건수": 275, "예측주문건수": 192.8, "오차": 82.2, "절댓값오차": 82.2, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-07", "매장": "강남역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 5, "주문건수": 338, "예측주문건수": 356.5, "오차": -18.5, "절댓값오차": 18.5, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-07", "매장": "양재역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 0, "주문건수": 337, "예측주문건수": 227.7, "오차": 109.3, "절댓값오차": 109.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-07", "매장": "판교역매장", "요일": "화", "영업예정시간": 13, "예정할인율": 0, "주문건수": 441, "예측주문건수": 428.8, "오차": 12.2, "절댓값오차": 12.2, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-07", "매장": "잠실역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 10, "주문건수": 360, "예측주문건수": 307.9, "오차": 52.1, "절댓값오차": 52.1, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-07", "매장": "수원역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 0, "주문건수": 218, "예측주문건수": 197.2, "오차": 20.8, "절댓값오차": 20.8, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-08", "매장": "강남역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 0, "주문건수": 318, "예측주문건수": 347.0, "오차": -29.0, "절댓값오차": 29.0, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-08", "매장": "양재역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 15, "주문건수": 363, "예측주문건수": 264.2, "오차": 98.8, "절댓값오차": 98.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-08", "매장": "판교역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 15, "주문건수": 401, "예측주문건수": 422.0, "오차": -21.0, "절댓값오차": 21.0, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-08", "매장": "잠실역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 0, "주문건수": 333, "예측주문건수": 286.9, "오차": 46.1, "절댓값오차": 46.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-08", "매장": "수원역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 5, "주문건수": 253, "예측주문건수": 210.8, "오차": 42.2, "절댓값오차": 42.2, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-09", "매장": "강남역매장", "요일": "목", "영업예정시간": 13, "예정할인율": 10, "주문건수": 351, "예측주문건수": 396.5, "오차": -45.5, "절댓값오차": 45.5, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-09", "매장": "양재역매장", "요일": "목", "영업예정시간": 9, "예정할인율": 0, "주문건수": 254, "예측주문건수": 212.9, "오차": 41.1, "절댓값오차": 41.1, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-09", "매장": "판교역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 15, "주문건수": 483, "예측주문건수": 448.4, "오차": 34.6, "절댓값오차": 34.6, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-09", "매장": "잠실역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 0, "주문건수": 392, "예측주문건수": 313.4, "오차": 78.6, "절댓값오차": 78.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-09", "매장": "수원역매장", "요일": "목", "영업예정시간": 11, "예정할인율": 0, "주문건수": 255, "예측주문건수": 225.7, "오차": 29.3, "절댓값오차": 29.3, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-10", "매장": "강남역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 10, "주문건수": 339, "예측주문건수": 393.0, "오차": -54.0, "절댓값오차": 54.0, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-10", "매장": "양재역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 0, "주문건수": 327, "예측주문건수": 252.7, "오차": 74.3, "절댓값오차": 74.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-10", "매장": "판교역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 0, "주문건수": 469, "예측주문건수": 432.1, "오차": 36.9, "절댓값오차": 36.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-10", "매장": "잠실역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 15, "주문건수": 423, "예측주문건수": 344.4, "오차": 78.6, "절댓값오차": 78.6, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-10", "매장": "수원역매장", "요일": "금", "영업예정시간": 9, "예정할인율": 0, "주문건수": 226, "예측주문건수": 200.6, "오차": 25.4, "절댓값오차": 25.4, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-11", "매장": "강남역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 325, "예측주문건수": 393.8, "오차": -68.8, "절댓값오차": 68.8, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-11", "매장": "양재역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 10, "주문건수": 376, "예측주문건수": 299.5, "오차": 76.5, "절댓값오차": 76.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-11", "매장": "판교역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 457, "예측주문건수": 455.9, "오차": 1.1, "절댓값오차": 1.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-11", "매장": "잠실역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 402, "예측주문건수": 355.4, "오차": 46.6, "절댓값오차": 46.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-11", "매장": "수원역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 0, "주문건수": 285, "예측주문건수": 246.1, "오차": 38.9, "절댓값오차": 38.9, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-12", "매장": "강남역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 0, "주문건수": 340, "예측주문건수": 382.4, "오차": -42.4, "절댓값오차": 42.4, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-12", "매장": "양재역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 0, "주문건수": 360, "예측주문건수": 265.1, "오차": 94.9, "절댓값오차": 94.9, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-12", "매장": "판교역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 0, "주문건수": 524, "예측주문건수": 444.5, "오차": 79.5, "절댓값오차": 79.5, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-12", "매장": "잠실역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 5, "주문건수": 417, "예측주문건수": 333.9, "오차": 83.1, "절댓값오차": 83.1, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-12", "매장": "수원역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 10, "주문건수": 294, "예측주문건수": 257.7, "오차": 36.3, "절댓값오차": 36.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-13", "매장": "강남역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 299, "예측주문건수": 340.6, "오차": -41.6, "절댓값오차": 41.6, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-13", "매장": "양재역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 0, "주문건수": 309, "예측주문건수": 244.9, "오차": 64.1, "절댓값오차": 64.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-13", "매장": "판교역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 15, "주문건수": 432, "예측주문건수": 415.6, "오차": 16.4, "절댓값오차": 16.4, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-13", "매장": "잠실역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 0, "주문건수": 326, "예측주문건수": 258.9, "오차": 67.1, "절댓값오차": 67.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-13", "매장": "수원역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 0, "주문건수": 225, "예측주문건수": 214.5, "오차": 10.5, "절댓값오차": 10.5, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-14", "매장": "강남역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 340, "예측주문건수": 345.0, "오차": -5.0, "절댓값오차": 5.0, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-14", "매장": "양재역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 0, "주문건수": 273, "예측주문건수": 227.7, "오차": 45.3, "절댓값오차": 45.3, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-14", "매장": "판교역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 451, "예측주문건수": 407.1, "오차": 43.9, "절댓값오차": 43.9, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-14", "매장": "잠실역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 404, "예측주문건수": 306.6, "오차": 97.4, "절댓값오차": 97.4, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-14", "매장": "수원역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 0, "주문건수": 213, "예측주문건수": 197.2, "오차": 15.8, "절댓값오차": 15.8, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-15", "매장": "강남역매장", "요일": "수", "영업예정시간": 13, "예정할인율": 5, "주문건수": 353, "예측주문건수": 380.1, "오차": -27.1, "절댓값오차": 27.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-15", "매장": "양재역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 5, "주문건수": 292, "예측주문건수": 241.2, "오차": 50.8, "절댓값오차": 50.8, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-15", "매장": "판교역매장", "요일": "수", "영업예정시간": 13, "예정할인율": 10, "주문건수": 527, "예측주문건수": 453.8, "오차": 73.2, "절댓값오차": 73.2, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-15", "매장": "잠실역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 0, "주문건수": 431, "예측주문건수": 286.9, "오차": 144.1, "절댓값오차": 144.1, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-15", "매장": "수원역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 5, "주문건수": 249, "예측주문건수": 232.4, "오차": 16.6, "절댓값오차": 16.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-16", "매장": "강남역매장", "요일": "목", "영업예정시간": 13, "예정할인율": 0, "주문건수": 344, "예측주문건수": 373.5, "오차": -29.5, "절댓값오차": 29.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-16", "매장": "양재역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 10, "주문건수": 334, "예측주문건수": 257.5, "오차": 76.5, "절댓값오차": 76.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-16", "매장": "판교역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 0, "주문건수": 479, "예측주문건수": 413.9, "오차": 65.1, "절댓값오차": 65.1, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-16", "매장": "잠실역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 0, "주문건수": 347, "예측주문건수": 270.1, "오차": 76.9, "절댓값오차": 76.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-16", "매장": "수원역매장", "요일": "목", "영업예정시간": 9, "예정할인율": 0, "주문건수": 214, "예측주문건수": 182.4, "오차": 31.6, "절댓값오차": 31.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-17", "매장": "강남역매장", "요일": "금", "영업예정시간": 13, "예정할인율": 0, "주문건수": 379, "예측주문건수": 391.6, "오차": -12.6, "절댓값오차": 12.6, "광고예산": 10000, "공휴일여부": 1}, {"날짜": "2026-07-17", "매장": "양재역매장", "요일": "금", "영업예정시간": 9, "예정할인율": 0, "주문건수": 293, "예측주문건수": 231.0, "오차": 62.0, "절댓값오차": 62.0, "광고예산": 20000, "공휴일여부": 1}, {"날짜": "2026-07-17", "매장": "판교역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 15, "주문건수": 552, "예측주문건수": 466.6, "오차": 85.4, "절댓값오차": 85.4, "광고예산": 50000, "공휴일여부": 1}, {"날짜": "2026-07-17", "매장": "잠실역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 0, "주문건수": 438, "예측주문건수": 331.5, "오차": 106.5, "절댓값오차": 106.5, "광고예산": 0, "공휴일여부": 1}, {"날짜": "2026-07-17", "매장": "수원역매장", "요일": "금", "영업예정시간": 9, "예정할인율": 5, "주문건수": 257, "예측주문건수": 212.1, "오차": 44.9, "절댓값오차": 44.9, "광고예산": 20000, "공휴일여부": 1}, {"날짜": "2026-07-18", "매장": "강남역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 10, "주문건수": 388, "예측주문건수": 416.8, "오차": -28.8, "절댓값오차": 28.8, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-18", "매장": "양재역매장", "요일": "토", "영업예정시간": 9, "예정할인율": 0, "주문건수": 338, "예측주문건수": 254.9, "오차": 83.1, "절댓값오차": 83.1, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-18", "매장": "판교역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 10, "주문건수": 463, "예측주문건수": 457.3, "오차": 5.7, "절댓값오차": 5.7, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-18", "매장": "잠실역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 5, "주문건수": 407, "예측주문건수": 345.2, "오차": 61.8, "절댓값오차": 61.8, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-18", "매장": "수원역매장", "요일": "토", "영업예정시간": 9, "예정할인율": 0, "주문건수": 241, "예측주문건수": 224.4, "오차": 16.6, "절댓값오차": 16.6, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-19", "매장": "강남역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 5, "주문건수": 348, "예측주문건수": 393.9, "오차": -45.9, "절댓값오차": 45.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-19", "매장": "양재역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 5, "주문건수": 462, "예측주문건수": 298.3, "오차": 163.7, "절댓값오차": 163.7, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-19", "매장": "판교역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 5, "주문건수": 605, "예측주문건수": 434.4, "오차": 170.6, "절댓값오차": 170.6, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-19", "매장": "잠실역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 0, "주문건수": 390, "예측주문건수": 322.4, "오차": 67.6, "절댓값오차": 67.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-19", "매장": "수원역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 5, "주문건수": 253, "예측주문건수": 246.2, "오차": 6.8, "절댓값오차": 6.8, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-20", "매장": "강남역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 281, "예측주문건수": 340.6, "오차": -59.6, "절댓값오차": 59.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-20", "매장": "양재역매장", "요일": "월", "영업예정시간": 9, "예정할인율": 10, "주문건수": 278, "예측주문건수": 224.7, "오차": 53.3, "절댓값오차": 53.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-20", "매장": "판교역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 436, "예측주문건수": 402.7, "오차": 33.3, "절댓값오차": 33.3, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-20", "매장": "잠실역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 5, "주문건수": 408, "예측주문건수": 292.0, "오차": 116.0, "절댓값오차": 116.0, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-20", "매장": "수원역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 0, "주문건수": 221, "예측주문건수": 192.8, "오차": 28.2, "절댓값오차": 28.2, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-21", "매장": "강남역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 15, "주문건수": 363, "예측주문건수": 379.5, "오차": -16.5, "절댓값오차": 16.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-21", "매장": "양재역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 15, "주문건수": 331, "예측주문건수": 262.2, "오차": 68.8, "절댓값오차": 68.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-21", "매장": "판교역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 454, "예측주문건수": 407.1, "오차": 46.9, "절댓값오차": 46.9, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-21", "매장": "잠실역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 15, "주문건수": 411, "예측주문건수": 319.4, "오차": 91.6, "절댓값오차": 91.6, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-21", "매장": "수원역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 0, "주문건수": 236, "예측주문건수": 197.2, "오차": 38.8, "절댓값오차": 38.8, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-22", "매장": "강남역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 0, "주문건수": 289, "예측주문건수": 325.4, "오차": -36.4, "절댓값오차": 36.4, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-22", "매장": "양재역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 0, "주문건수": 333, "예측주문건수": 251.4, "오차": 81.6, "절댓값오차": 81.6, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-22", "매장": "판교역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 10, "주문건수": 425, "예측주문건수": 432.1, "오차": -7.1, "절댓값오차": 7.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-22", "매장": "잠실역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 0, "주문건수": 415, "예측주문건수": 286.9, "오차": 128.1, "절댓값오차": 128.1, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-22", "매장": "수원역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 5, "주문건수": 238, "예측주문건수": 210.8, "오차": 27.2, "절댓값오차": 27.2, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-23", "매장": "강남역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 0, "주문건수": 346, "예측주문건수": 351.8, "오차": -5.8, "절댓값오차": 5.8, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-23", "매장": "양재역매장", "요일": "목", "영업예정시간": 9, "예정할인율": 0, "주문건수": 244, "예측주문건수": 212.9, "오차": 31.1, "절댓값오차": 31.1, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-23", "매장": "판교역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 0, "주문건수": 381, "예측주문건수": 413.9, "오차": -32.9, "절댓값오차": 32.9, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-23", "매장": "잠실역매장", "요일": "목", "영업예정시간": 11, "예정할인율": 0, "주문건수": 348, "예측주문건수": 291.8, "오차": 56.2, "절댓값오차": 56.2, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-23", "매장": "수원역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 0, "주문건수": 243, "예측주문건수": 204.1, "오차": 38.9, "절댓값오차": 38.9, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-24", "매장": "강남역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 0, "주문건수": 491, "예측주문건수": 370.0, "오차": 121.0, "절댓값오차": 121.0, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-24", "매장": "양재역매장", "요일": "금", "영업예정시간": 9, "예정할인율": 10, "주문건수": 239, "예측주문건수": 254.0, "오차": -15.0, "절댓값오차": 15.0, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-24", "매장": "판교역매장", "요일": "금", "영업예정시간": 13, "예정할인율": 0, "주문건수": 477, "예측주문건수": 453.7, "오차": 23.3, "절댓값오차": 23.3, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-24", "매장": "잠실역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 0, "주문건수": 373, "예측주문건수": 309.9, "오차": 63.1, "절댓값오차": 63.1, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-24", "매장": "수원역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 5, "주문건수": 295, "예측주문건수": 233.7, "오차": 61.3, "절댓값오차": 61.3, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-25", "매장": "강남역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 476, "예측주문건수": 393.8, "오차": 82.2, "절댓값오차": 82.2, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-25", "매장": "양재역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 10, "주문건수": 362, "예측주문건수": 321.2, "오차": 40.8, "절댓값오차": 40.8, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-25", "매장": "판교역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 529, "예측주문건수": 455.9, "오차": 73.1, "절댓값오차": 73.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-25", "매장": "잠실역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 421, "예측주문건수": 355.4, "오차": 65.6, "절댓값오차": 65.6, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-25", "매장": "수원역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 0, "주문건수": 345, "예측주문건수": 246.1, "오차": 98.9, "절댓값오차": 98.9, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-26", "매장": "강남역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 0, "주문건수": 343, "예측주문건수": 382.4, "오차": -39.4, "절댓값오차": 39.4, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-26", "매장": "양재역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 0, "주문건수": 327, "예측주문건수": 265.1, "오차": 61.9, "절댓값오차": 61.9, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-26", "매장": "판교역매장", "요일": "일", "영업예정시간": 13, "예정할인율": 10, "주문건수": 613, "예측주문건수": 489.2, "오차": 123.8, "절댓값오차": 123.8, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-26", "매장": "잠실역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 0, "주문건수": 394, "예측주문건수": 322.4, "오차": 71.6, "절댓값오차": 71.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-26", "매장": "수원역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 5, "주문건수": 309, "예측주문건수": 267.8, "오차": 41.2, "절댓값오차": 41.2, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-27", "매장": "강남역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 330, "예측주문건수": 340.6, "오차": -10.6, "절댓값오차": 10.6, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-27", "매장": "양재역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 10, "주문건수": 265, "예측주문건수": 246.3, "오차": 18.7, "절댓값오차": 18.7, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-27", "매장": "판교역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 0, "주문건수": 491, "예측주문건수": 381.1, "오차": 109.9, "절댓값오차": 109.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-27", "매장": "잠실역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 5, "주문건수": 389, "예측주문건수": 292.0, "오차": 97.0, "절댓값오차": 97.0, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-27", "매장": "수원역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 10, "주문건수": 283, "예측주문건수": 215.8, "오차": 67.2, "절댓값오차": 67.2, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-28", "매장": "강남역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 363, "예측주문건수": 345.0, "오차": 18.0, "절댓값오차": 18.0, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-28", "매장": "양재역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 0, "주문건수": 270, "예측주문건수": 227.7, "오차": 42.3, "절댓값오차": 42.3, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-28", "매장": "판교역매장", "요일": "화", "영업예정시간": 13, "예정할인율": 0, "주문건수": 448, "예측주문건수": 428.8, "오차": 19.2, "절댓값오차": 19.2, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-28", "매장": "잠실역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 0, "주문건수": 476, "예측주문건수": 284.9, "오차": 191.1, "절댓값오차": 191.1, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-28", "매장": "수원역매장", "요일": "화", "영업예정시간": 9, "예정할인율": 5, "주문건수": 264, "예측주문건수": 187.1, "오차": 76.9, "절댓값오차": 76.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-29", "매장": "강남역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 0, "주문건수": 344, "예측주문건수": 325.4, "오차": 18.6, "절댓값오차": 18.6, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-07-29", "매장": "양재역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 0, "주문건수": 253, "예측주문건수": 229.7, "오차": 23.3, "절댓값오차": 23.3, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-29", "매장": "판교역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 10, "주문건수": 483, "예측주문건수": 410.5, "오차": 72.5, "절댓값오차": 72.5, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-29", "매장": "잠실역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 0, "주문건수": 535, "예측주문건수": 286.9, "오차": 248.1, "절댓값오차": 248.1, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-07-29", "매장": "수원역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 0, "주문건수": 242, "예측주문건수": 199.3, "오차": 42.7, "절댓값오차": 42.7, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-07-30", "매장": "강남역매장", "요일": "목", "영업예정시간": 11, "예정할인율": 0, "주문건수": 346, "예측주문건수": 330.2, "오차": 15.8, "절댓값오차": 15.8, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-30", "매장": "양재역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 10, "주문건수": 325, "예측주문건수": 257.5, "오차": 67.5, "절댓값오차": 67.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-30", "매장": "판교역매장", "요일": "목", "영업예정시간": 13, "예정할인율": 0, "주문건수": 465, "예측주문건수": 435.6, "오차": 29.4, "절댓값오차": 29.4, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-30", "매장": "잠실역매장", "요일": "목", "영업예정시간": 11, "예정할인율": 0, "주문건수": 500, "예측주문건수": 291.8, "오차": 208.2, "절댓값오차": 208.2, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-30", "매장": "수원역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 0, "주문건수": 279, "예측주문건수": 204.1, "오차": 74.9, "절댓값오차": 74.9, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-07-31", "매장": "강남역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 10, "주문건수": 410, "예측주문건수": 393.0, "오차": 17.0, "절댓값오차": 17.0, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-31", "매장": "양재역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 0, "주문건수": 318, "예측주문건수": 274.3, "오차": 43.7, "절댓값오차": 43.7, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-31", "매장": "판교역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 0, "주문건수": 445, "예측주문건수": 432.1, "오차": 12.9, "절댓값오차": 12.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-31", "매장": "잠실역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 0, "주문건수": 370, "예측주문건수": 309.9, "오차": 60.1, "절댓값오차": 60.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-07-31", "매장": "수원역매장", "요일": "금", "영업예정시간": 9, "예정할인율": 10, "주문건수": 309, "예측주문건수": 223.6, "오차": 85.4, "절댓값오차": 85.4, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-01", "매장": "강남역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 421, "예측주문건수": 393.8, "오차": 27.2, "절댓값오차": 27.2, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-01", "매장": "양재역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 0, "주문건수": 350, "예측주문건수": 276.5, "오차": 73.5, "절댓값오차": 73.5, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-01", "매장": "판교역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 525, "예측주문건수": 455.9, "오차": 69.1, "절댓값오차": 69.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-01", "매장": "잠실역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 10, "주문건수": 405, "예측주문건수": 356.7, "오차": 48.3, "절댓값오차": 48.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-01", "매장": "수원역매장", "요일": "토", "영업예정시간": 9, "예정할인율": 5, "주문건수": 316, "예측주문건수": 235.9, "오차": 80.1, "절댓값오차": 80.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-02", "매장": "강남역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 0, "주문건수": 337, "예측주문건수": 382.4, "오차": -45.4, "절댓값오차": 45.4, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-02", "매장": "양재역매장", "요일": "일", "영업예정시간": 9, "예정할인율": 5, "주문건수": 322, "예측주문건수": 255.0, "오차": 67.0, "절댓값오차": 67.0, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-02", "매장": "판교역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 0, "주문건수": 504, "예측주문건수": 422.9, "오차": 81.1, "절댓값오차": 81.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-02", "매장": "잠실역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 0, "주문건수": 382, "예측주문건수": 322.4, "오차": 59.6, "절댓값오차": 59.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-02", "매장": "수원역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 10, "주문건수": 323, "예측주문건수": 257.7, "오차": 65.3, "절댓값오차": 65.3, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-03", "매장": "강남역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 15, "주문건수": 386, "예측주문건수": 375.1, "오차": 10.9, "절댓값오차": 10.9, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-03", "매장": "양재역매장", "요일": "월", "영업예정시간": 9, "예정할인율": 5, "주문건수": 245, "예측주문건수": 213.2, "오차": 31.8, "절댓값오차": 31.8, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-03", "매장": "판교역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 10, "주문건수": 471, "예측주문건수": 425.7, "오차": 45.3, "절댓값오차": 45.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-03", "매장": "잠실역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 0, "주문건수": 373, "예측주문건수": 280.5, "오차": 92.5, "절댓값오차": 92.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-03", "매장": "수원역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 10, "주문건수": 277, "예측주문건수": 215.8, "오차": 61.2, "절댓값오차": 61.2, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-04", "매장": "강남역매장", "요일": "화", "영업예정시간": 13, "예정할인율": 0, "주문건수": 372, "예측주문건수": 366.6, "오차": 5.4, "절댓값오차": 5.4, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-04", "매장": "양재역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 0, "주문건수": 266, "예측주문건수": 227.7, "오차": 38.3, "절댓값오차": 38.3, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-04", "매장": "판교역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 433, "예측주문건수": 407.1, "오차": 25.9, "절댓값오차": 25.9, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-04", "매장": "잠실역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 0, "주문건수": 396, "예측주문건수": 284.9, "오차": 111.1, "절댓값오차": 111.1, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-04", "매장": "수원역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 0, "주문건수": 262, "예측주문건수": 197.2, "오차": 64.8, "절댓값오차": 64.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-05", "매장": "강남역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 15, "주문건수": 429, "예측주문건수": 381.5, "오차": 47.5, "절댓값오차": 47.5, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-05", "매장": "양재역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 0, "주문건수": 323, "예측주문건수": 229.7, "오차": 93.3, "절댓값오차": 93.3, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-05", "매장": "판교역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 0, "주문건수": 474, "예측주문건수": 409.1, "오차": 64.9, "절댓값오차": 64.9, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-05", "매장": "잠실역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 0, "주문건수": 373, "예측주문건수": 286.9, "오차": 86.1, "절댓값오차": 86.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-05", "매장": "수원역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 10, "주문건수": 307, "예측주문건수": 243.9, "오차": 63.1, "절댓값오차": 63.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-06", "매장": "강남역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 0, "주문건수": 394, "예측주문건수": 351.8, "오차": 42.2, "절댓값오차": 42.2, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-06", "매장": "양재역매장", "요일": "목", "영업예정시간": 9, "예정할인율": 10, "주문건수": 341, "예측주문건수": 235.9, "오차": 105.1, "절댓값오차": 105.1, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-06", "매장": "판교역매장", "요일": "목", "영업예정시간": 13, "예정할인율": 0, "주문건수": 464, "예측주문건수": 435.6, "오차": 28.4, "절댓값오차": 28.4, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-06", "매장": "잠실역매장", "요일": "목", "영업예정시간": 11, "예정할인율": 0, "주문건수": 407, "예측주문건수": 291.8, "오차": 115.2, "절댓값오차": 115.2, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-06", "매장": "수원역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 0, "주문건수": 286, "예측주문건수": 204.1, "오차": 81.9, "절댓값오차": 81.9, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-07", "매장": "강남역매장", "요일": "금", "영업예정시간": 13, "예정할인율": 0, "주문건수": 427, "예측주문건수": 391.6, "오차": 35.4, "절댓값오차": 35.4, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-07", "매장": "양재역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 10, "주문건수": 377, "예측주문건수": 297.3, "오차": 79.7, "절댓값오차": 79.7, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-07", "매장": "판교역매장", "요일": "금", "영업예정시간": 13, "예정할인율": 10, "주문건수": 526, "예측주문건수": 476.7, "오차": 49.3, "절댓값오차": 49.3, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-07", "매장": "잠실역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 0, "주문건수": 375, "예측주문건수": 309.9, "오차": 65.1, "절댓값오차": 65.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-07", "매장": "수원역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 10, "주문건수": 348, "예측주문건수": 245.2, "오차": 102.8, "절댓값오차": 102.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-08", "매장": "강남역매장", "요일": "토", "영업예정시간": 13, "예정할인율": 5, "주문건수": 416, "예측주문건수": 426.9, "오차": -10.9, "절댓값오차": 10.9, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-08", "매장": "양재역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 0, "주문건수": 333, "예측주문건수": 276.5, "오차": 56.5, "절댓값오차": 56.5, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-08", "매장": "판교역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 5, "주문건수": 535, "예측주문건수": 467.4, "오차": 67.6, "절댓값오차": 67.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-08", "매장": "잠실역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 0, "주문건수": 335, "예측주문건수": 333.7, "오차": 1.3, "절댓값오차": 1.3, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-08", "매장": "수원역매장", "요일": "토", "영업예정시간": 9, "예정할인율": 0, "주문건수": 238, "예측주문건수": 224.4, "오차": 13.6, "절댓값오차": 13.6, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-09", "매장": "강남역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 10, "주문건수": 504, "예측주문건수": 405.4, "오차": 98.6, "절댓값오차": 98.6, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-09", "매장": "양재역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 0, "주문건수": 359, "예측주문건수": 265.1, "오차": 93.9, "절댓값오차": 93.9, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-09", "매장": "판교역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 0, "주문건수": 504, "예측주문건수": 444.5, "오차": 59.5, "절댓값오차": 59.5, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-09", "매장": "잠실역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 15, "주문건수": 436, "예측주문건수": 356.8, "오차": 79.2, "절댓값오차": 79.2, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-09", "매장": "수원역매장", "요일": "일", "영업예정시간": 9, "예정할인율": 0, "주문건수": 261, "예측주문건수": 213.0, "오차": 48.0, "절댓값오차": 48.0, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-10", "매장": "강남역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 10, "주문건수": 441, "예측주문건수": 363.6, "오차": 77.4, "절댓값오차": 77.4, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-10", "매장": "양재역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 0, "주문건수": 272, "예측주문건수": 223.3, "오차": 48.7, "절댓값오차": 48.7, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-10", "매장": "판교역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 0, "주문건수": 445, "예측주문건수": 381.1, "오차": 63.9, "절댓값오차": 63.9, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-10", "매장": "잠실역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 357, "예측주문건수": 302.2, "오차": 54.8, "절댓값오차": 54.8, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-10", "매장": "수원역매장", "요일": "월", "영업예정시간": 9, "예정할인율": 5, "주문건수": 203, "예측주문건수": 182.7, "오차": 20.3, "절댓값오차": 20.3, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-11", "매장": "강남역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 0, "주문건수": 433, "예측주문건수": 323.4, "오차": 109.6, "절댓값오차": 109.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-11", "매장": "양재역매장", "요일": "화", "영업예정시간": 9, "예정할인율": 10, "주문건수": 293, "예측주문건수": 229.1, "오차": 63.9, "절댓값오차": 63.9, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-11", "매장": "판교역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 455, "예측주문건수": 407.1, "오차": 47.9, "절댓값오차": 47.9, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-11", "매장": "잠실역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 15, "주문건수": 373, "예측주문건수": 297.8, "오차": 75.2, "절댓값오차": 75.2, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-11", "매장": "수원역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 0, "주문건수": 168, "예측주문건수": 197.2, "오차": -29.2, "절댓값오차": 29.2, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-12", "매장": "강남역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 0, "주문건수": 346, "예측주문건수": 325.4, "오차": 20.6, "절댓값오차": 20.6, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-12", "매장": "양재역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 0, "주문건수": 301, "예측주문건수": 229.7, "오차": 71.3, "절댓값오차": 71.3, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-12", "매장": "판교역매장", "요일": "수", "영업예정시간": 11, "예정할인율": 10, "주문건수": 495, "예측주문건수": 410.5, "오차": 84.5, "절댓값오차": 84.5, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-12", "매장": "잠실역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 10, "주문건수": 395, "예측주문건수": 288.3, "오차": 106.7, "절댓값오차": 106.7, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-12", "매장": "수원역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 0, "주문건수": 245, "예측주문건수": 199.3, "오차": 45.7, "절댓값오차": 45.7, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-13", "매장": "강남역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 10, "주문건수": 368, "예측주문건수": 374.8, "오차": -6.8, "절댓값오차": 6.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-13", "매장": "양재역매장", "요일": "목", "영업예정시간": 9, "예정할인율": 10, "주문건수": 299, "예측주문건수": 235.9, "오차": 63.1, "절댓값오차": 63.1, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-13", "매장": "판교역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 10, "주문건수": 500, "예측주문건수": 436.9, "오차": 63.1, "절댓값오차": 63.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-13", "매장": "잠실역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 0, "주문건수": 496, "예측주문건수": 270.1, "오차": 225.9, "절댓값오차": 225.9, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-13", "매장": "수원역매장", "요일": "목", "영업예정시간": 9, "예정할인율": 0, "주문건수": 203, "예측주문건수": 182.4, "오차": 20.6, "절댓값오차": 20.6, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-14", "매장": "강남역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 15, "주문건수": 391, "예측주문건수": 404.5, "오차": -13.5, "절댓값오차": 13.5, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-14", "매장": "양재역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 0, "주문건수": 343, "예측주문건수": 252.7, "오차": 90.3, "절댓값오차": 90.3, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-14", "매장": "판교역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 0, "주문건수": 463, "예측주문건수": 432.1, "오차": 30.9, "절댓값오차": 30.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-14", "매장": "잠실역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 10, "주문건수": 401, "예측주문건수": 311.3, "오차": 89.7, "절댓값오차": 89.7, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-14", "매장": "수원역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 10, "주문건수": 291, "예측주문건수": 266.9, "오차": 24.1, "절댓값오차": 24.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-15", "매장": "강남역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 265, "예측주문건수": 393.8, "오차": -128.8, "절댓값오차": 128.8, "광고예산": 20000, "공휴일여부": 1}, {"날짜": "2026-08-15", "매장": "양재역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 0, "주문건수": 373, "예측주문건수": 276.5, "오차": 96.5, "절댓값오차": 96.5, "광고예산": 30000, "공휴일여부": 1}, {"날짜": "2026-08-15", "매장": "판교역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 546, "예측주문건수": 455.9, "오차": 90.1, "절댓값오차": 90.1, "광고예산": 0, "공휴일여부": 1}, {"날짜": "2026-08-15", "매장": "잠실역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 10, "주문건수": 435, "예측주문건수": 356.7, "오차": 78.3, "절댓값오차": 78.3, "광고예산": 0, "공휴일여부": 1}, {"날짜": "2026-08-15", "매장": "수원역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 5, "주문건수": 304, "예측주문건수": 257.6, "오차": 46.4, "절댓값오차": 46.4, "광고예산": 20000, "공휴일여부": 1}, {"날짜": "2026-08-16", "매장": "강남역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 0, "주문건수": 340, "예측주문건수": 382.4, "오차": -42.4, "절댓값오차": 42.4, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-16", "매장": "양재역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 15, "주문건수": 424, "예측주문건수": 299.6, "오차": 124.4, "절댓값오차": 124.4, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-16", "매장": "판교역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 10, "주문건수": 538, "예측주문건수": 467.5, "오차": 70.5, "절댓값오차": 70.5, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-16", "매장": "잠실역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 5, "주문건수": 415, "예측주문건수": 333.9, "오차": 81.1, "절댓값오차": 81.1, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-16", "매장": "수원역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 0, "주문건수": 238, "예측주문건수": 234.7, "오차": 3.3, "절댓값오차": 3.3, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-17", "매장": "강남역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 350, "예측주문건수": 340.6, "오차": 9.4, "절댓값오차": 9.4, "광고예산": 20000, "공휴일여부": 1}, {"날짜": "2026-08-17", "매장": "양재역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 15, "주문건수": 359, "예측주문건수": 257.8, "오차": 101.2, "절댓값오차": 101.2, "광고예산": 20000, "공휴일여부": 1}, {"날짜": "2026-08-17", "매장": "판교역매장", "요일": "월", "영업예정시간": 13, "예정할인율": 5, "주문건수": 483, "예측주문건수": 435.8, "오차": 47.2, "절댓값오차": 47.2, "광고예산": 0, "공휴일여부": 1}, {"날짜": "2026-08-17", "매장": "잠실역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 0, "주문건수": 343, "예측주문건수": 258.9, "오차": 84.1, "절댓값오차": 84.1, "광고예산": 10000, "공휴일여부": 1}, {"날짜": "2026-08-17", "매장": "수원역매장", "요일": "월", "영업예정시간": 9, "예정할인율": 0, "주문건수": 259, "예측주문건수": 171.2, "오차": 87.8, "절댓값오차": 87.8, "광고예산": 50000, "공휴일여부": 1}, {"날짜": "2026-08-18", "매장": "강남역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 269, "예측주문건수": 345.0, "오차": -76.0, "절댓값오차": 76.0, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-18", "매장": "양재역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 0, "주문건수": 335, "예측주문건수": 227.7, "오차": 107.3, "절댓값오차": 107.3, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-18", "매장": "판교역매장", "요일": "화", "영업예정시간": 13, "예정할인율": 5, "주문건수": 459, "예측주문건수": 440.2, "오차": 18.8, "절댓값오차": 18.8, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-18", "매장": "잠실역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 10, "주문건수": 426, "예측주문건수": 307.9, "오차": 118.1, "절댓값오차": 118.1, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-18", "매장": "수원역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 0, "주문건수": 242, "예측주문건수": 197.2, "오차": 44.8, "절댓값오차": 44.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-19", "매장": "강남역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 0, "주문건수": 337, "예측주문건수": 347.0, "오차": -10.0, "절댓값오차": 10.0, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-19", "매장": "양재역매장", "요일": "수", "영업예정시간": 9, "예정할인율": 0, "주문건수": 296, "예측주문건수": 208.1, "오차": 87.9, "절댓값오차": 87.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-19", "매장": "판교역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 5, "주문건수": 426, "예측주문건수": 420.6, "오차": 5.4, "절댓값오차": 5.4, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-19", "매장": "잠실역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 0, "주문건수": 365, "예측주문건수": 308.6, "오차": 56.4, "절댓값오차": 56.4, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-19", "매장": "수원역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 0, "주문건수": 200, "예측주문건수": 199.3, "오차": 0.7, "절댓값오차": 0.7, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-20", "매장": "강남역매장", "요일": "목", "영업예정시간": 13, "예정할인율": 15, "주문건수": 405, "예측주문건수": 408.0, "오차": -3.0, "절댓값오차": 3.0, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-20", "매장": "양재역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 0, "주문건수": 354, "예측주문건수": 234.5, "오차": 119.5, "절댓값오차": 119.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-20", "매장": "판교역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 0, "주문건수": 448, "예측주문건수": 413.9, "오차": 34.1, "절댓값오차": 34.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-20", "매장": "잠실역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 15, "주문건수": 375, "예측주문건수": 304.6, "오차": 70.4, "절댓값오차": 70.4, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-20", "매장": "수원역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 0, "주문건수": 232, "예측주문건수": 204.1, "오차": 27.9, "절댓값오차": 27.9, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-21", "매장": "강남역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 0, "주문건수": 362, "예측주문건수": 370.0, "오차": -8.0, "절댓값오차": 8.0, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-21", "매장": "양재역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 0, "주문건수": 331, "예측주문건수": 252.7, "오차": 78.3, "절댓값오차": 78.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-21", "매장": "판교역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 0, "주문건수": 503, "예측주문건수": 432.1, "오차": 70.9, "절댓값오차": 70.9, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-21", "매장": "잠실역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 15, "주문건수": 439, "예측주문건수": 344.4, "오차": 94.6, "절댓값오차": 94.6, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-21", "매장": "수원역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 10, "주문건수": 264, "예측주문건수": 245.2, "오차": 18.8, "절댓값오차": 18.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-22", "매장": "강남역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 388, "예측주문건수": 393.8, "오차": -5.8, "절댓값오차": 5.8, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-22", "매장": "양재역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 0, "주문건수": 364, "예측주문건수": 298.2, "오차": 65.8, "절댓값오차": 65.8, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-22", "매장": "판교역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 5, "주문건수": 532, "예측주문건수": 467.4, "오차": 64.6, "절댓값오차": 64.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-22", "매장": "잠실역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 360, "예측주문건수": 355.4, "오차": 4.6, "절댓값오차": 4.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-22", "매장": "수원역매장", "요일": "토", "영업예정시간": 9, "예정할인율": 15, "주문건수": 228, "예측주문건수": 258.9, "오차": -30.9, "절댓값오차": 30.9, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-23", "매장": "강남역매장", "요일": "일", "영업예정시간": 13, "예정할인율": 0, "주문건수": 477, "예측주문건수": 404.1, "오차": 72.9, "절댓값오차": 72.9, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-23", "매장": "양재역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 0, "주문건수": 317, "예측주문건수": 265.1, "오차": 51.9, "절댓값오차": 51.9, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-23", "매장": "판교역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 0, "주문건수": 594, "예측주문건수": 422.9, "오차": 171.1, "절댓값오차": 171.1, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-23", "매장": "잠실역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 10, "주문건수": 317, "예측주문건수": 323.7, "오차": -6.7, "절댓값오차": 6.7, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-23", "매장": "수원역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 15, "주문건수": 290, "예측주문건수": 290.8, "오차": -0.8, "절댓값오차": 0.8, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-24", "매장": "강남역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 332, "예측주문건수": 340.6, "오차": -8.6, "절댓값오차": 8.6, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-24", "매장": "양재역매장", "요일": "월", "영업예정시간": 9, "예정할인율": 10, "주문건수": 357, "예측주문건수": 224.7, "오차": 132.3, "절댓값오차": 132.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-24", "매장": "판교역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 601, "예측주문건수": 402.7, "오차": 198.3, "절댓값오차": 198.3, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-24", "매장": "잠실역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 10, "주문건수": 326, "예측주문건수": 303.5, "오차": 22.5, "절댓값오차": 22.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-24", "매장": "수원역매장", "요일": "월", "영업예정시간": 9, "예정할인율": 15, "주문건수": 189, "예측주문건수": 205.7, "오차": -16.7, "절댓값오차": 16.7, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-25", "매장": "강남역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 0, "주문건수": 345, "예측주문건수": 345.0, "오차": 0.0, "절댓값오차": 0.0, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-25", "매장": "양재역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 10, "주문건수": 348, "예측주문건수": 272.3, "오차": 75.7, "절댓값오차": 75.7, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-25", "매장": "판교역매장", "요일": "화", "영업예정시간": 12, "예정할인율": 10, "주문건수": 589, "예측주문건수": 430.1, "오차": 158.9, "절댓값오차": 158.9, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-25", "매장": "잠실역매장", "요일": "화", "영업예정시간": 11, "예정할인율": 5, "주문건수": 332, "예측주문건수": 296.4, "오차": 35.6, "절댓값오차": 35.6, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-25", "매장": "수원역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 5, "주문건수": 189, "예측주문건수": 208.7, "오차": -19.7, "절댓값오차": 19.7, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-26", "매장": "강남역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 0, "주문건수": 320, "예측주문건수": 347.0, "오차": -27.0, "절댓값오차": 27.0, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-26", "매장": "양재역매장", "요일": "수", "영업예정시간": 9, "예정할인율": 5, "주문건수": 271, "예측주문건수": 219.6, "오차": 51.4, "절댓값오차": 51.4, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-26", "매장": "판교역매장", "요일": "수", "영업예정시간": 12, "예정할인율": 10, "주문건수": 490, "예측주문건수": 432.1, "오차": 57.9, "절댓값오차": 57.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-26", "매장": "잠실역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 0, "주문건수": 313, "예측주문건수": 265.3, "오차": 47.7, "절댓값오차": 47.7, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-26", "매장": "수원역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 0, "주문건수": 208, "예측주문건수": 199.3, "오차": 8.7, "절댓값오차": 8.7, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-27", "매장": "강남역매장", "요일": "목", "영업예정시간": 12, "예정할인율": 0, "주문건수": 324, "예측주문건수": 351.8, "오차": -27.8, "절댓값오차": 27.8, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-27", "매장": "양재역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 0, "주문건수": 232, "예측주문건수": 234.5, "오차": -2.5, "절댓값오차": 2.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-27", "매장": "판교역매장", "요일": "목", "영업예정시간": 13, "예정할인율": 15, "주문건수": 547, "예측주문건수": 470.1, "오차": 76.9, "절댓값오차": 76.9, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-27", "매장": "잠실역매장", "요일": "목", "영업예정시간": 11, "예정할인율": 0, "주문건수": 296, "예측주문건수": 291.8, "오차": 4.2, "절댓값오차": 4.2, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-27", "매장": "수원역매장", "요일": "목", "영업예정시간": 9, "예정할인율": 0, "주문건수": 208, "예측주문건수": 182.4, "오차": 25.6, "절댓값오차": 25.6, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-28", "매장": "강남역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 15, "주문건수": 337, "예측주문건수": 404.5, "오차": -67.5, "절댓값오차": 67.5, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-28", "매장": "양재역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 0, "주문건수": 263, "예측주문건수": 252.7, "오차": 10.3, "절댓값오차": 10.3, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-28", "매장": "판교역매장", "요일": "금", "영업예정시간": 12, "예정할인율": 0, "주문건수": 486, "예측주문건수": 432.1, "오차": 53.9, "절댓값오차": 53.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-28", "매장": "잠실역매장", "요일": "금", "영업예정시간": 11, "예정할인율": 10, "주문건수": 349, "예측주문건수": 332.9, "오차": 16.1, "절댓값오차": 16.1, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-28", "매장": "수원역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 5, "주문건수": 217, "예측주문건수": 233.7, "오차": -16.7, "절댓값오차": 16.7, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-29", "매장": "강남역매장", "요일": "토", "영업예정시간": 13, "예정할인율": 0, "주문건수": 355, "예측주문건수": 415.4, "오차": -60.4, "절댓값오차": 60.4, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-29", "매장": "양재역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 5, "주문건수": 344, "예측주문건수": 309.7, "오차": 34.3, "절댓값오차": 34.3, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-29", "매장": "판교역매장", "요일": "토", "영업예정시간": 12, "예정할인율": 0, "주문건수": 523, "예측주문건수": 455.9, "오차": 67.1, "절댓값오차": 67.1, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-29", "매장": "잠실역매장", "요일": "토", "영업예정시간": 11, "예정할인율": 0, "주문건수": 356, "예측주문건수": 333.7, "오차": 22.3, "절댓값오차": 22.3, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-29", "매장": "수원역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 0, "주문건수": 274, "예측주문건수": 246.1, "오차": 27.9, "절댓값오차": 27.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-30", "매장": "강남역매장", "요일": "일", "영업예정시간": 11, "예정할인율": 5, "주문건수": 302, "예측주문건수": 372.3, "오차": -70.3, "절댓값오차": 70.3, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-30", "매장": "양재역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 10, "주문건수": 349, "예측주문건수": 288.1, "오차": 60.9, "절댓값오차": 60.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-08-30", "매장": "판교역매장", "요일": "일", "영업예정시간": 12, "예정할인율": 10, "주문건수": 541, "예측주문건수": 467.5, "오차": 73.5, "절댓값오차": 73.5, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-30", "매장": "잠실역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 0, "주문건수": 318, "예측주문건수": 300.7, "오차": 17.3, "절댓값오차": 17.3, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-30", "매장": "수원역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 15, "주문건수": 305, "예측주문건수": 269.2, "오차": 35.8, "절댓값오차": 35.8, "광고예산": 50000, "공휴일여부": 0}, {"날짜": "2026-08-31", "매장": "강남역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 0, "주문건수": 374, "예측주문건수": 340.6, "오차": 33.4, "절댓값오차": 33.4, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-08-31", "매장": "양재역매장", "요일": "월", "영업예정시간": 9, "예정할인율": 10, "주문건수": 263, "예측주문건수": 224.7, "오차": 38.3, "절댓값오차": 38.3, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-08-31", "매장": "판교역매장", "요일": "월", "영업예정시간": 12, "예정할인율": 10, "주문건수": 419, "예측주문건수": 425.7, "오차": -6.7, "절댓값오차": 6.7, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-31", "매장": "잠실역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 0, "주문건수": 296, "예측주문건수": 280.5, "오차": 15.5, "절댓값오차": 15.5, "광고예산": 0, "공휴일여부": 0}, {"날짜": "2026-08-31", "매장": "수원역매장", "요일": "월", "영업예정시간": 10, "예정할인율": 10, "주문건수": 353, "예측주문건수": 215.8, "오차": 137.2, "절댓값오차": 137.2, "광고예산": 50000, "공휴일여부": 0}];
+    const suwonRecords = [{"날짜": "2026-06-01", "매장": "수원역매장", "요일": "월", "영업예정시간": 11, "예정할인율": 0, "주문건수": 240, "예측주문건수": 214.5, "오차": 25.5, "절댓값오차": 25.5, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-02", "매장": "수원역매장", "요일": "화", "영업예정시간": 10, "예정할인율": 5, "주문건수": 236, "예측주문건수": 208.7, "오차": 27.3, "절댓값오차": 27.3, "광고예산": 30000, "공휴일여부": 0}, {"날짜": "2026-06-03", "매장": "수원역매장", "요일": "수", "영업예정시간": 10, "예정할인율": 0, "주문건수": 277, "예측주문건수": 199.3, "오차": 77.7, "절댓값오차": 77.7, "광고예산": 50000, "공휴일여부": 1}, {"날짜": "2026-06-04", "매장": "수원역매장", "요일": "목", "영업예정시간": 10, "예정할인율": 10, "주문건수": 245, "예측주문건수": 227.1, "오차": 17.9, "절댓값오차": 17.9, "광고예산": 20000, "공휴일여부": 0}, {"날짜": "2026-06-05", "매장": "수원역매장", "요일": "금", "영업예정시간": 10, "예정할인율": 5, "주문건수": 282, "예측주문건수": 233.7, "오차": 48.3, "절댓값오차": 48.3, "광고예산": 10000, "공휴일여부": 0}, {"날짜": "2026-06-06", "매장": "수원역매장", "요일": "토", "영업예정시간": 10, "예정할인율": 10, "주문건수": 296, "예측주문건수": 269.0, "오차": 27.0, "절댓값오차": 27.0, "광고예산": 20000, "공휴일여부": 1}, {"날짜": "2026-06-07", "매장": "수원역매장", "요일": "일", "영업예정시간": 10, "예정할인율": 0, "주문건수": 229, "예측주문건수": 234.7, "오차": -5.7, "절댓값오차": 5.7, "광고예산": 0, "공휴일여부": 0}];
+
+    // 1. Suwon Week Chart Initialization
+    const suwonCtx = document.getElementById('suwonWeekChart').getContext('2d');
+    const suwonLabels = suwonRecords.map(r => r['날짜'].substring(5) + ' (' + r['요일'] + ')');
+    const suwonActuals = suwonRecords.map(r => r['주문건수']);
+    const suwonPreds = suwonRecords.map(r => r['예측주문건수']);
+
+    new Chart(suwonCtx, {
+      type: 'line',
+      data: {
+        labels: suwonLabels,
+        datasets: [
+          {
+            label: '실제 주문건수',
+            data: suwonActuals,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            borderWidth: 2.5,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            pointBackgroundColor: '#2563eb',
+            fill: false,
+            tension: 0.15
+          },
+          {
+            label: '예측 주문건수',
+            data: suwonPreds,
+            borderColor: '#dc2626',
+            borderDash: [5, 5],
+            borderWidth: 2,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointBackgroundColor: '#dc2626',
+            fill: false,
+            tension: 0.15
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { font: { size: 12, family: 'Pretendard' } } },
+          tooltip: {
+            callbacks: {
+              afterLabel: function(context) {
+                const idx = context.dataIndex;
+                const r = suwonRecords[idx];
+                const holiday = r['공휴일여부'] === 1 ? '공휴일' : '평일';
+                const ad = (r['광고예산'] / 10000) + '만원';
+                return `공휴일: ${holiday} | 광고: ${ad} | 오차: ${r['오차']}건`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            title: { display: true, text: '주문건수 (건)', font: { size: 11 } },
+            min: 180,
+            max: 320
+          }
+        }
+      }
+    });
+
+    // 2. Interactive Store Chart
+    let interactiveChartInstance = null;
+    const interCtx = document.getElementById('interactiveChart').getContext('2d');
+
+    function updateInteractiveView(storeName) {
+      let filtered = [];
+      let groupedActual = {};
+      let groupedPred = {};
+
+      if (storeName === '전체') {
+        // Group by date
+        testRecords.forEach(r => {
+          if (!groupedActual[r['날짜']]) {
+            groupedActual[r['날짜']] = 0;
+            groupedPred[r['날짜']] = 0;
+          }
+          groupedActual[r['날짜']] += r['주문건수'];
+          groupedPred[r['날짜']] += r['예측주문건수'];
+        });
+        const dates = Object.keys(groupedActual).sort();
+        filtered = dates.map(d => ({
+          '날짜': d,
+          '매장': '전체 매장 합산',
+          '요일': '',
+          '영업예정시간': '-',
+          '예정할인율': '-',
+          '주문건수': groupedActual[d],
+          '예측주문건수': Math.round(groupedPred[d] * 10) / 10,
+          '오차': Math.round((groupedActual[d] - groupedPred[d]) * 10) / 10,
+          '절댓값오차': Math.abs(Math.round((groupedActual[d] - groupedPred[d]) * 10) / 10)
+        }));
+      } else {
+        filtered = testRecords.filter(r => r['매장'] === storeName).sort((a,b) => a['날짜'].localeCompare(b['날짜']));
+      }
+
+      // Metrics
+      const totalActual = filtered.reduce((acc, cur) => acc + cur['주문건수'], 0);
+      const totalPred = filtered.reduce((acc, cur) => acc + cur['예측주문건수'], 0);
+      const avgAct = (totalActual / filtered.length).toFixed(1);
+      const avgPr = (totalPred / filtered.length).toFixed(1);
+      const totalMae = (filtered.reduce((acc, cur) => acc + cur['절댓값오차'], 0) / filtered.length).toFixed(1);
+
+      document.getElementById('avgActual').innerText = avgAct + ' 건';
+      document.getElementById('avgPred').innerText = avgPr + ' 건';
+      document.getElementById('maeMetric').innerText = totalMae + ' 건';
+
+      // Update Chart
+      const labels = filtered.map(r => r['날짜']);
+      const actualData = filtered.map(r => r['주문건수']);
+      const predData = filtered.map(r => r['예측주문건수']);
+
+      if (interactiveChartInstance) {
+        interactiveChartInstance.destroy();
+      }
+
+      interactiveChartInstance = new Chart(interCtx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: storeName + ' 실제 주문',
+              data: actualData,
+              borderColor: '#2563eb',
+              backgroundColor: 'rgba(37, 99, 235, 0.05)',
+              borderWidth: 2,
+              pointRadius: 2,
+              tension: 0.1
+            },
+            {
+              label: storeName + ' 예측 주문',
+              data: predData,
+              borderColor: '#ef4444',
+              borderDash: [4, 4],
+              borderWidth: 1.8,
+              pointRadius: 2,
+              tension: 0.1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+              callbacks: {
+                afterLabel: function(context) {
+                  const idx = context.dataIndex;
+                  const item = filtered[idx];
+                  return `오차: ${item['오차']}건 (${item['주문건수']} vs ${item['예측주문건수']})`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { maxTicksLimit: 14 } },
+            y: { title: { display: true, text: '주문건수 (건)' } }
+          }
+        }
+      });
+
+      // Top 5 error table
+      const sortedByError = [...filtered].sort((a,b) => b['절댓값오차'] - a['절댓값오차']).slice(0, 5);
+      const tbody = document.getElementById('topErrorTableBody');
+      tbody.innerHTML = '';
+      sortedByError.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="p-2.5 font-medium">${item['날짜']}</td>
+          <td class="p-2.5">${item['매장']}</td>
+          <td class="p-2.5">${item['요일'] || '-'}</td>
+          <td class="p-2.5 text-center">${item['영업예정시간']}</td>
+          <td class="p-2.5 text-center">${item['예정할인율']}%</td>
+          <td class="p-2.5 text-right font-bold text-blue-700">${item['주문건수']}건</td>
+          <td class="p-2.5 text-right text-slate-600">${item['예측주문건수']}건</td>
+          <td class="p-2.5 text-right font-bold ${item['오차'] > 0 ? 'text-rose-600' : 'text-emerald-600'}">${item['오차'] > 0 ? '+' + item['오차'] : item['오차']}건</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Filter Buttons Listener
+    const buttons = document.querySelectorAll('.filter-btn');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', function() {
+        buttons.forEach(b => {
+          b.className = 'filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900';
+        });
+        this.className = 'filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-blue-600 text-white shadow-sm';
+        updateInteractiveView(this.getAttribute('data-store'));
+      });
+    });
+
+    // Initial load
+    updateInteractiveView('전체');
+  </script>
+
+</body>
+</html>

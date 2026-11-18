@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[슬라이드] 수원역매장 주간 상세 검토 및 인력 최적화 계획</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+    body { 
+      font-family: 'Pretendard', -apple-system, sans-serif; 
+      background-color: #0f172a;
+    }
+    .slide-aspect {
+      aspect-ratio: 16 / 9;
+      max-width: 1200px;
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 sm:p-8">
+
+  <!-- 16:9 Slide Container -->
+  <div class="slide-aspect w-full bg-slate-900 text-white rounded-3xl shadow-2xl border border-slate-800 flex flex-col justify-between p-8 sm:p-10 relative overflow-hidden">
+    
+    <!-- Top Decorative Line -->
+    <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-rose-500"></div>
+
+    <!-- Slide Header -->
+    <div class="flex items-start justify-between border-b border-slate-800 pb-4">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">주간 운영 상세 검토</span>
+          <span class="text-xs text-slate-400">Project 2 · 05회차 매장 주문량 예측</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          수원역매장 6월 1주차 실적 분석 및 인력 배치 최적화 방안
+        </h1>
+      </div>
+      <div class="text-right">
+        <span class="text-xs text-slate-400 block">분석 대상 기간</span>
+        <span class="text-sm font-bold text-slate-200">2026.06.01(월) ~ 06.07(일)</span>
+      </div>
+    </div>
+
+    <!-- Slide Body (Grid 2 Columns) -->
+    <div class="grid grid-cols-12 gap-6 my-auto py-2">
+      
+      <!-- Left Column: Chart & Numbers (7 Cols) -->
+      <div class="col-span-7 flex flex-col justify-between space-y-4">
+        
+        <!-- Chart Box -->
+        <div class="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/60">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold text-slate-300 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+              일별 실제 vs 예측 주문건수 추이 (수원역)
+            </h3>
+            <span class="text-[11px] text-slate-400">단위: 건</span>
+          </div>
+          <div class="h-48">
+            <canvas id="slideSuwonChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 3 Highlight Cards -->
+        <div class="grid grid-cols-3 gap-3">
+          <div class="bg-rose-950/40 border border-rose-500/40 rounded-xl p-3">
+            <div class="text-[11px] text-rose-300 font-medium">6/3(수) 최대 오차</div>
+            <div class="text-lg font-bold text-rose-400 mt-0.5">+77.7건 <span class="text-xs font-normal text-rose-300">(과소)</span></div>
+            <div class="text-[10px] text-rose-200/70 mt-1">공휴일 + 광고 5만 원 집행</div>
+          </div>
+          <div class="bg-blue-950/40 border border-blue-500/40 rounded-xl p-3">
+            <div class="text-[11px] text-blue-300 font-medium">6/6(토) 주간 최고</div>
+            <div class="text-lg font-bold text-blue-400 mt-0.5">296건 <span class="text-xs font-normal text-blue-300">(실적)</span></div>
+            <div class="text-[10px] text-blue-200/70 mt-1">현충일 연휴 피크 유입</div>
+          </div>
+          <div class="bg-slate-800/70 border border-slate-700/60 rounded-xl p-3">
+            <div class="text-[11px] text-slate-400 font-medium">주간 평균 실적</div>
+            <div class="text-lg font-bold text-slate-200 mt-0.5">257.9건</div>
+            <div class="text-[10px] text-slate-400 mt-1">예측 평균(226.7건) 상회</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Operational Diagnosis & 3-Step Action Plan (5 Cols) -->
+      <div class="col-span-5 flex flex-col justify-between space-y-3">
+        
+        <!-- Diagnosis Box -->
+        <div class="bg-amber-950/30 border border-amber-500/40 rounded-xl p-3.5">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-amber-300 mb-1">
+            <span>⚠️</span> 원인 진단: 모델의 한계점
+          </div>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            1차 선형회귀 모델이 <strong>'공휴일'</strong>과 <strong>'광고예산'</strong>을 제외하고 학습되어, 6/3(수)을 단순 비수기 평일(예측 199건)로 오판 → <strong>실제 277건(+39% 폭증)</strong> 발생 시 재료 품절 및 대기 대란 초래.
+          </p>
+        </div>
+
+        <!-- Action Plan Box -->
+        <div class="bg-indigo-950/40 border border-indigo-500/40 rounded-xl p-4 space-y-3 flex-1 flex flex-col justify-around">
+          <div class="text-xs font-bold text-indigo-300 flex items-center gap-1.5 border-b border-indigo-500/30 pb-2">
+            <span>📋</span> 공휴일·광고 집중일 인력 최적화 3대 전략
+          </div>
+
+          <!-- Step 1 -->
+          <div class="flex items-start gap-2.5">
+            <span class="w-5 h-5 rounded-full bg-indigo-500/30 border border-indigo-400 text-indigo-200 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+            <div>
+              <div class="text-xs font-bold text-indigo-200">운영 룰(Rule) 기반 안전 버퍼 가산</div>
+              <p class="text-[11px] text-slate-300 leading-snug">
+                공휴일 or 광고예산 ≥ 3만 원 집행 시 기본 모델 예측값에 <strong>+35%(약 +60~70건) 의무 가산</strong>.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="flex items-start gap-2.5">
+            <span class="w-5 h-5 rounded-full bg-blue-500/30 border border-blue-400 text-blue-200 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+            <div>
+              <div class="text-xs font-bold text-blue-200">피크타임 '스플릿 시프트' 파트타임 투입</div>
+              <p class="text-[11px] text-slate-300 leading-snug">
+                평일 기본 2인 → <strong>오후 피크 4시간(13~17시) 단기 인력 1~2명 추가 배치</strong>(전일 풀타임 대비 인건비 40% 절감).
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="flex items-start gap-2.5">
+            <span class="w-5 h-5 rounded-full bg-emerald-500/30 border border-emerald-400 text-emerald-200 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+            <div>
+              <div class="text-xs font-bold text-emerald-200">전날 마감 프렙 & 원부자재 선발주 연동</div>
+              <p class="text-[11px] text-slate-300 leading-snug">
+                마케팅팀 광고 일정 사전 공유받아 화요일 야간 마감 시 <strong>우유·원두 1.5배 소분 준비</strong> 완료.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Slide Footer -->
+    <div class="border-t border-slate-800 pt-3 flex items-center justify-between text-[11px] text-slate-500">
+      <div>카페 브랜드 운영본부 · 데이터 기반 매장 운영 최적화 리포트</div>
+      <div>Generated for Antigravity Operations Dashboard</div>
+    </div>
+
+  </div>
+
+  <script>
+    const ctx = document.getElementById('slideSuwonChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['06-01 (월)', '06-02 (화)', '06-03 (수)★', '06-04 (목)', '06-05 (금)', '06-06 (토)', '06-07 (일)'],
+        datasets: [
+          {
+            label: '실제 주문건수',
+            data: [240, 236, 277, 245, 282, 296, 229],
+            borderColor: '#60a5fa',
+            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+            borderWidth: 3,
+            pointRadius: 5,
+            pointBackgroundColor: '#60a5fa',
+            tension: 0.2
+          },
+          {
+            label: '예측 주문건수',
+            data: [214.5, 208.7, 199.3, 227.1, 233.7, 269.0, 234.7],
+            borderColor: '#f87171',
+            borderDash: [5, 5],
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: '#f87171',
+            tension: 0.2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { 
+            position: 'top', 
+            labels: { color: '#cbd5e1', font: { size: 11, family: 'Pretendard' } } 
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+          y: { 
+            min: 180, 
+            max: 320, 
+            ticks: { color: '#94a3b8', font: { size: 10 } }, 
+            grid: { color: 'rgba(148, 163, 184, 0.1)' } 
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
+
