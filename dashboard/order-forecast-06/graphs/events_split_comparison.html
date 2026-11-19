@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>행사 유무별 두 모델(운영정보 추가 vs 행사정보 추가) 비교</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+    .container { max-width: 960px; margin: auto; background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    h2 { margin-top: 0; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
+    .summary { background: #eff6ff; padding: 15px 18px; border-radius: 6px; margin-top: 20px; line-height: 1.65; font-size: 15px; border-left: 4px solid #3b82f6; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { padding: 10px 12px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f1f5f9; color: #334155; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>행사 유무(있음 / 없음)별 모델 오차 비교</h2>
+    <p>비교 기간: 2026-06-01 ~ 2026-08-31 | '운영정보 추가' vs '행사정보 추가'</p>
+    
+    <div id="chart1" style="width:100%;height:380px;"></div>
+    <div id="chart2" style="width:100%;height:380px;margin-top:25px;"></div>
+    
+    <div class="summary">
+      <strong>💡 분석 요약</strong><br>
+      • <strong>행사 있는 날 (30건, 6.5%):</strong> MAE는 <strong>116.1건 → 45.4건 (-70.7건, 60.9% 급감)</strong>, RMSE는 <strong>137.9건 → 61.1건 (-76.8건, 55.7% 급감)</strong>하여 모델 성능이 극적으로 개선되었습니다.<br>
+      • <strong>행사 없는 날 (430건, 93.5%):</strong> MAE는 <strong>42.6건 → 46.1건 (+3.5건)</strong>으로 소폭 조정되었으나 거의 안정적인 수준을 유지했습니다.<br>
+      • <strong>전체 평균만 보면 놓치는 점:</strong> 전체 MAE는 47.4건 → 46.0건으로 겨우 1.4건 줄어든 것처럼 보이지만, <strong>실제로는 전체 데이터의 93.5%에 달하는 비행사일의 희석 효과 때문</strong>이며, 행사 당일의 100건대 대형 빗나감 오차는 절반 이하로 완벽히 잡혔습니다.
+    </div>
+  </div>
+  <script>
+    var categories = ['행사 있음 (30건)', '행사 없음 (430건)', '전체 (460건)'];
+    
+    // MAE
+    var trace1 = {
+      x: categories,
+      y: [116.5, 42.6, 47.4],
+      name: '운영정보 추가 MAE',
+      type: 'bar',
+      marker: { color: '#94a3b8' },
+      text: ["116.5\uac74", "42.6\uac74", "47.4\uac74"],
+      textposition: 'auto'
+    };
+    var trace2 = {
+      x: categories,
+      y: [48.3, 45.8, 46.0],
+      name: '행사정보 추가 MAE',
+      type: 'bar',
+      marker: { color: '#3b82f6' },
+      text: ["48.3\uac74", "45.8\uac74", "46.0\uac74"],
+      textposition: 'auto'
+    };
+    var layout1 = {
+      title: '<b>① 행사 유무별 MAE (평균 오차) 비교</b>',
+      barmode: 'group',
+      yaxis: { title: 'MAE (건)' },
+      margin: { t: 40, b: 40, l: 60, r: 30 }
+    };
+    Plotly.newPlot('chart1', [trace1, trace2], layout1);
+
+    // RMSE
+    var trace3 = {
+      x: categories,
+      y: [131.2, 52.5, 60.8],
+      name: '운영정보 추가 RMSE',
+      type: 'bar',
+      marker: { color: '#fdba74' },
+      text: ["131.2\uac74", "52.5\uac74", "60.8\uac74"],
+      textposition: 'auto'
+    };
+    var trace4 = {
+      x: categories,
+      y: [61.7, 55.9, 56.3],
+      name: '행사정보 추가 RMSE',
+      type: 'bar',
+      marker: { color: '#ea580c' },
+      text: ["61.7\uac74", "55.9\uac74", "56.3\uac74"],
+      textposition: 'auto'
+    };
+    var layout2 = {
+      title: '<b>② 행사 유무별 RMSE (대형 오차 페널티) 비교</b>',
+      barmode: 'group',
+      yaxis: { title: 'RMSE (건)' },
+      margin: { t: 40, b: 40, l: 60, r: 30 }
+    };
+    Plotly.newPlot('chart2', [trace3, trace4], layout2);
+  </script>
+</body>
+</html>

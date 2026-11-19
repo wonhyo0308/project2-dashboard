@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>3개 모델 오차(MAE·RMSE) 비교</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+    .container { max-width: 850px; margin: auto; background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    h2 { margin-top: 0; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
+    .summary { background: #eff6ff; padding: 15px 18px; border-radius: 6px; margin-top: 20px; line-height: 1.65; font-size: 15px; border-left: 4px solid #3b82f6; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>비교 기간 3개 모델 오차(MAE · RMSE) 비교</h2>
+    <p>비교 기간: 2026-06-01 ~ 2026-08-31 (총 460건) | 단위: 주문건수(건)</p>
+    <div id="chart" style="width:100%;height:440px;"></div>
+    <div class="summary">
+      <strong>💡 3개 모델 성능 변화 핵심 요약</strong><br>
+      • <strong>MAE:</strong> 59.4건(매장별 평균) → 56.3건(첫 회귀) → <strong>47.4건(정보추가)</strong> [첫 회귀 대비 <strong>-8.9건 (-15.8%)</strong> 대폭 감소]<br>
+      • <strong>RMSE:</strong> 74.9건(매장별 평균) → 70.0건(첫 회귀) → <strong>60.8건(정보추가)</strong> [첫 회귀 대비 <strong>-9.2건 (-13.1%)</strong> 대폭 감소]<br>
+      • <strong>주요 요인:</strong> 여름철 성수기 계절 효과(<strong>월</strong>), <strong>공휴일(+33.0건)</strong>, <strong>광고예산</strong>을 추가 반영하면서 첫 회귀의 만성적 과소 예측이 크게 개선되었습니다.
+    </div>
+  </div>
+  <script>
+    var trace1 = {
+      x: ['매장별 평균', '첫 회귀', '정보추가'],
+      y: [59.4, 56.3, 47.4],
+      name: 'MAE (평균 절대 오차)',
+      type: 'bar',
+      marker: { color: '#3b82f6' },
+      text: ['59.4건', '56.3건', '47.4건'],
+      textposition: 'auto'
+    };
+    var trace2 = {
+      x: ['매장별 평균', '첫 회귀', '정보추가'],
+      y: [74.9, 70.0, 60.8],
+      name: 'RMSE (제곱근 평균 오차)',
+      type: 'bar',
+      marker: { color: '#f97316' },
+      text: ['74.9건', '70.0건', '60.8건'],
+      textposition: 'auto'
+    };
+    var data = [trace1, trace2];
+    var layout = {
+      barmode: 'group',
+      yaxis: { title: '오차 (단위: 건)', range: [0, 90] },
+      xaxis: { title: '모델 구분' },
+      margin: { t: 30, b: 50, l: 60, r: 30 },
+      legend: { orientation: 'h', y: 1.12, x: 0.25 }
+    };
+    Plotly.newPlot('chart', data, layout);
+  </script>
+</body>
+</html>

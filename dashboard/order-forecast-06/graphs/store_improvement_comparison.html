@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>매장별 행사정보 추가 전후 개선도 비교</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+    .container { max-width: 950px; margin: auto; background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    h2 { margin-top: 0; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
+    .summary { background: #eff6ff; padding: 15px 18px; border-radius: 6px; margin-top: 20px; line-height: 1.65; font-size: 15px; border-left: 4px solid #3b82f6; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { padding: 10px 12px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f1f5f9; color: #334155; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>매장별 '운영정보 추가' vs '행사정보 추가' 개선도 비교</h2>
+    <p>비교 기간: 2026-06-01 ~ 2026-08-31 | 개선도 = 추가 전 MAE − 추가 후 MAE (양수: 개선, 음수: 악화)</p>
+    
+    <div id="chart1" style="width:100%;height:380px;"></div>
+    <div id="chart2" style="width:100%;height:380px;margin-top:25px;"></div>
+    
+    <div class="summary">
+      <strong>💡 핵심 분석 요약</strong><br>
+      • <strong>행사 있는 날 (우측 차트):</strong> 모든 매장에서 MAE가 <strong>19.6건 ~ 94.8건 대폭 개선</strong>되었습니다. (수원 +94.8건, 판교 +93.2건, 잠실 +81.9건, 양재 +61.1건, 강남 +19.6건)<br>
+      • <strong>전체 날짜 (좌측 차트):</strong> 강남(+6.5건), 수원(+1.9건), 판교(+1.4건)는 개선되었으나, <strong>양재(-2.1건)와 잠실(-0.8건)은 전체 평균에서 소폭 악화</strong>되었습니다.<br>
+      • <strong>원인:</strong> 행사일 오차가 크게 잡혔지만, 행사 빈도가 낮은 비행사일(약 92%)에서 전역적 행사 가중치 적용으로 인한 소폭의 조정 오차가 발생했기 때문입니다.
+    </div>
+  </div>
+  <script>
+    var stores = ["\uac15\ub0a8\uc5ed\ub9e4\uc7a5", "\uc218\uc6d0\uc5ed\ub9e4\uc7a5", "\uc591\uc7ac\uc5ed\ub9e4\uc7a5", "\uc7a0\uc2e4\uc5ed\ub9e4\uc7a5", "\ud310\uad50\uc5ed\ub9e4\uc7a5"];
+    var diff_all = [6.5, 1.9, -2.1, -0.8, 1.4];
+    var diff_ev = [19.6, 94.8, 61.1, 81.9, 93.2];
+
+    var trace1 = {
+      x: stores,
+      y: diff_all,
+      type: 'bar',
+      marker: { color: diff_all.map(v => v >= 0 ? '#10b981' : '#ef4444') },
+      text: diff_all.map(v => (v > 0 ? '+' : '') + v + '건'),
+      textposition: 'auto'
+    };
+    var layout1 = {
+      title: '<b>① 전체 날짜 기준 (총 460건) 매장별 MAE 개선도</b>',
+      yaxis: { title: 'MAE 차이 (건) [양수: 개선 / 음수: 악화]' },
+      shapes: [{ type: 'line', x0: -0.5, x1: 4.5, y0: 0, y1: 0, line: { color: 'black', dash: 'dash', width: 1.5 } }],
+      margin: { t: 40, b: 40, l: 60, r: 30 }
+    };
+    Plotly.newPlot('chart1', [trace1], layout1);
+
+    var trace2 = {
+      x: stores,
+      y: diff_ev,
+      type: 'bar',
+      marker: { color: diff_ev.map(v => v >= 0 ? '#10b981' : '#ef4444') },
+      text: diff_ev.map(v => '+' + v + '건'),
+      textposition: 'auto'
+    };
+    var layout2 = {
+      title: '<b>② 행사 있는 날 기준 (총 30건) 매장별 MAE 개선도</b>',
+      yaxis: { title: 'MAE 차이 (건) [양수: 개선 / 음수: 악화]' },
+      shapes: [{ type: 'line', x0: -0.5, x1: 4.5, y0: 0, y1: 0, line: { color: 'black', dash: 'dash', width: 1.5 } }],
+      margin: { t: 40, b: 40, l: 60, r: 30 }
+    };
+    Plotly.newPlot('chart2', [trace2], layout2);
+  </script>
+</body>
+</html>
